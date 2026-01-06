@@ -1,0 +1,175 @@
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>0e4b942d-f013-4c41-90a3-cebad98bbbf7</ProjectGuid>
+    <ProjectHome>.</ProjectHome>
+    <StartupFile>ai_project_extractor.py</StartupFile>
+    <SearchPath>
+    </SearchPath>
+    <WorkingDirectory>.</WorkingDirectory>
+    <OutputPath>.</OutputPath>
+    <Name>ai_project_extractor</Name>
+    <RootNamespace>ai_project_extractor</RootNamespace>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <DebugSymbols>true</DebugSymbols>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <DebugSymbols>true</DebugSymbols>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="ai_project_extractor.py" />
+    <Compile Include="core\ai\prompt_generator.py" />
+    <Compile Include="core\ai\prompt_templates.py" />
+    <Compile Include="core\async_extractor.py" />
+    <Compile Include="core\backend_domain_extractor.py" />
+    <Compile Include="core\classifier.py" />
+    <Compile Include="core\contract_extractor.py" />
+    <Compile Include="core\coupling_extractor.py" />
+    <Compile Include="core\di_extractor.py" />
+    <Compile Include="core\entry_extractor.py" />
+    <Compile Include="core\extractors\js_ts\dependency_graph.py" />
+    <Compile Include="core\extractors\js_ts\module_exporter.py" />
+    <Compile Include="core\extractors\js_ts\risk_analyzer.py" />
+    <Compile Include="core\extractors\kotlin\call_graph.py" />
+    <Compile Include="core\extractors\kotlin\code_exporter.py" />
+    <Compile Include="core\extractors\kotlin\data_flow_extractor.py" />
+    <Compile Include="core\extractors\kotlin\di_graph_exporter.py" />
+    <Compile Include="core\extractors\kotlin\mermaid_visualizer.py" />
+    <Compile Include="core\extractors\kotlin\navigation_graph.py" />
+    <Compile Include="core\extractors\kotlin\risk_analyzer.py" />
+    <Compile Include="core\extractors\kotlin\role_classifier.py" />
+    <Compile Include="core\extractors\kotlin\room_schema_extractor.py" />
+    <Compile Include="core\extractors\kotlin\ui_map_exporter.py" />
+    <Compile Include="core\extractors\python\ai_code_exporter.py" />
+    <Compile Include="core\extractors\python\call_graph.py" />
+    <Compile Include="core\extractors\python\code_exporter.py" />
+    <Compile Include="core\extractors\python\module_extractor.py" />
+    <Compile Include="core\extractors\python\risk_analyzer.py" />
+    <Compile Include="core\git_scanner.py" />
+    <Compile Include="core\graphviz\js_ts_dependency_graph.py" />
+    <Compile Include="core\graphviz\kotlin_di_graph.py" />
+    <Compile Include="core\graphviz\kotlin_ui_graph.py" />
+    <Compile Include="core\language_profiles.py" />
+    <Compile Include="core\language_registry.py" />
+    <Compile Include="core\layer_violation_detector.py" />
+    <Compile Include="core\missing_reference_detector.py" />
+    <Compile Include="core\navigation_extractor.py" />
+    <Compile Include="core\risk_analyzer.py" />
+    <Compile Include="core\scanner.py" />
+    <Compile Include="core\security\sanitizer\SecuritySanitizer.py" />
+    <Compile Include="core\structure_builder.py" />
+    <Compile Include="core\summary\executive_summary.py" />
+    <Compile Include="core\ui_flow_extractor.py" />
+    <Compile Include="core\utils\file_reader.py" />
+    <Compile Include="exporters\ai_master_index_exporter.py" />
+    <Compile Include="exporters\app_context_exporter.py" />
+    <Compile Include="exporters\backend_domain_exporter.py" />
+    <Compile Include="exporters\contract_exporter.py" />
+    <Compile Include="exporters\navigation_exporter.py" />
+    <Compile Include="exporters\risk_exporter.py" />
+    <Compile Include="exporters\role_exporter.py" />
+    <Compile Include="models\tree_node.py" />
+    <Compile Include="rules\role_rules.py" />
+    <Compile Include="state\app_state.py" />
+    <Compile Include="state\output_registry.py" />
+    <Compile Include="state\performance_cache.py" />
+    <Compile Include="ui\action_bar.py" />
+    <Compile Include="ui\header.py" />
+    <Compile Include="ui\main_window.py" />
+    <Compile Include="ui\menus.py" />
+    <Compile Include="ui\onboarding_dialog.py" />
+    <Compile Include="ui\sidebar.py" />
+    <Compile Include="ui\theme_manager.py" />
+    <Compile Include="ui\widgets.py" />
+    <Compile Include="ui\worker.py" />
+    <Compile Include="ui\workspace.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="core\" />
+    <Folder Include="core\ai\" />
+    <Folder Include="core\ai\__pycache__\" />
+    <Folder Include="core\extractors\" />
+    <Folder Include="core\extractors\js_ts\" />
+    <Folder Include="core\extractors\js_ts\__pycache__\" />
+    <Folder Include="core\extractors\kotlin\" />
+    <Folder Include="core\extractors\kotlin\__pycache__\" />
+    <Folder Include="core\extractors\python\" />
+    <Folder Include="core\extractors\python\__pycache__\" />
+    <Folder Include="core\graphviz\" />
+    <Folder Include="core\graphviz\__pycache__\" />
+    <Folder Include="core\security\" />
+    <Folder Include="core\security\sanitizer\" />
+    <Folder Include="core\security\sanitizer\__pycache__\" />
+    <Folder Include="core\summary\" />
+    <Folder Include="core\summary\__pycache__\" />
+    <Folder Include="core\utils\" />
+    <Folder Include="core\utils\__pycache__\" />
+    <Folder Include="core\__pycache__\" />
+    <Folder Include="exporters\" />
+    <Folder Include="models\" />
+    <Folder Include="output\" />
+    <Folder Include="rules\" />
+    <Folder Include="state\" />
+    <Folder Include="state\__pycache__\" />
+    <Folder Include="ui\" />
+    <Folder Include="ui\__pycache__\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="core\ai\__pycache__\prompt_generator.cpython-313.pyc" />
+    <Content Include="core\ai\__pycache__\prompt_templates.cpython-313.pyc" />
+    <Content Include="core\extractors\js_ts\__pycache__\dependency_graph.cpython-313.pyc" />
+    <Content Include="core\extractors\js_ts\__pycache__\module_exporter.cpython-313.pyc" />
+    <Content Include="core\extractors\js_ts\__pycache__\risk_analyzer.cpython-313.pyc" />
+    <Content Include="core\extractors\kotlin\__pycache__\call_graph.cpython-313.pyc" />
+    <Content Include="core\extractors\kotlin\__pycache__\code_exporter.cpython-313.pyc" />
+    <Content Include="core\extractors\kotlin\__pycache__\data_flow_extractor.cpython-313.pyc" />
+    <Content Include="core\extractors\kotlin\__pycache__\di_graph_exporter.cpython-313.pyc" />
+    <Content Include="core\extractors\kotlin\__pycache__\mermaid_visualizer.cpython-313.pyc" />
+    <Content Include="core\extractors\kotlin\__pycache__\navigation_graph.cpython-313.pyc" />
+    <Content Include="core\extractors\kotlin\__pycache__\risk_analyzer.cpython-313.pyc" />
+    <Content Include="core\extractors\kotlin\__pycache__\role_classifier.cpython-313.pyc" />
+    <Content Include="core\extractors\kotlin\__pycache__\room_schema_extractor.cpython-313.pyc" />
+    <Content Include="core\extractors\kotlin\__pycache__\ui_map_exporter.cpython-313.pyc" />
+    <Content Include="core\extractors\python\__pycache__\ai_code_exporter.cpython-313.pyc" />
+    <Content Include="core\extractors\python\__pycache__\call_graph.cpython-313.pyc" />
+    <Content Include="core\extractors\python\__pycache__\code_exporter.cpython-313.pyc" />
+    <Content Include="core\extractors\python\__pycache__\module_extractor.cpython-313.pyc" />
+    <Content Include="core\extractors\python\__pycache__\risk_analyzer.cpython-313.pyc" />
+    <Content Include="core\graphviz\__pycache__\kotlin_di_graph.cpython-313.pyc" />
+    <Content Include="core\graphviz\__pycache__\kotlin_ui_graph.cpython-313.pyc" />
+    <Content Include="core\New Text Document.txt" />
+    <Content Include="core\security\sanitizer\__pycache__\SecuritySanitizer.cpython-313.pyc" />
+    <Content Include="core\summary\__pycache__\executive_summary.cpython-313.pyc" />
+    <Content Include="core\utils\__pycache__\file_reader.cpython-313.pyc" />
+    <Content Include="core\__pycache__\git_scanner.cpython-313.pyc" />
+    <Content Include="core\__pycache__\language_profiles.cpython-313.pyc" />
+    <Content Include="core\__pycache__\language_registry.cpython-313.pyc" />
+    <Content Include="core\__pycache__\scanner.cpython-313.pyc" />
+    <Content Include="core\__pycache__\structure_builder.cpython-313.pyc" />
+    <Content Include="output\00_project_structure.txt" />
+    <Content Include="state\__pycache__\app_state.cpython-313.pyc" />
+    <Content Include="state\__pycache__\output_registry.cpython-313.pyc" />
+    <Content Include="state\__pycache__\performance_cache.cpython-313.pyc" />
+    <Content Include="ui\__pycache__\action_bar.cpython-313.pyc" />
+    <Content Include="ui\__pycache__\main_window.cpython-313.pyc" />
+    <Content Include="ui\__pycache__\onboarding_dialog.cpython-313.pyc" />
+    <Content Include="ui\__pycache__\sidebar.cpython-313.pyc" />
+    <Content Include="ui\__pycache__\theme_manager.cpython-313.pyc" />
+    <Content Include="ui\__pycache__\widgets.cpython-313.pyc" />
+    <Content Include="ui\__pycache__\worker.cpython-313.pyc" />
+    <Content Include="ui\__pycache__\workspace.cpython-313.pyc" />
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
+  <!-- Uncomment the CoreCompile target to enable the Build command in
+       Visual Studio and specify your pre- and post-build commands in
+       the BeforeBuild and AfterBuild targets below. -->
+  <!--<Target Name="CoreCompile" />-->
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+</Project>

@@ -1,12 +1,12 @@
 from PySide6.QtWidgets import (
     QWidget, QHBoxLayout, QPushButton, QComboBox,
-    QLabel, QMenu
+    QLabel, QMenu, QCheckBox, QMessageBox
 )
 from PySide6.QtCore import QSettings
 from state.app_state import AppState
 from core.language_registry import LANGUAGE_PROFILES
 from ui.theme_manager import ThemeManager
-
+from core.git_scanner import GitScanner # 🔥 New Import
 
 class ActionBar(QWidget):
     def __init__(
@@ -15,23 +15,38 @@ class ActionBar(QWidget):
         export_selected_cb,
         export_all_cb,
         export_zip_cb,
+        git_toggle_cb=None # New Callback
     ):
         super().__init__()
 
         self.settings = QSettings("AIProjectExtractor", "App")
+        self.git_toggle_cb = git_toggle_cb
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(8, 4, 8, 4)
-        layout.setSpacing(12)
+        layout.setSpacing(15)
 
         # ---------- Project ----------
         self.project_btn = QPushButton("📂 Select Project")
         self.project_btn.setFixedHeight(36)
         self.project_btn.clicked.connect(select_project_cb)
+        
+        # ---------- Git Filter (NEW) ----------
+        self.git_check = QCheckBox("Git Changes Only")
+        self.git_check.setStyleSheet("""
+            QCheckBox { color: #e0e0e0; font-weight: bold; }
+            QCheckBox::indicator { width: 14px; height: 14px; }
+            QCheckBox::indicator:checked { background-color: #dcdcaa; border-radius: 2px; }
+            QCheckBox::indicator:unchecked { background-color: #3e3e42; border-radius: 2px; }
+        """)
+        self.git_check.setToolTip("Only scan uncommitted/staged files")
+        self.git_check.setEnabled(False) # Disabled until project load
+        self.git_check.stateChanged.connect(self.on_git_toggle)
 
         # ---------- Language ----------
         self.language_combo = QComboBox()
         self.language_combo.setFixedHeight(36)
+        self.language_combo.setMinimumWidth(150)
         for key, profile in LANGUAGE_PROFILES.items():
             self.language_combo.addItem(profile["display"], key)
 
@@ -48,12 +63,6 @@ class ActionBar(QWidget):
         self.theme_combo.setFixedHeight(36)
         self.theme_combo.addItem("Dark", "dark")
         self.theme_combo.addItem("Light", "light")
-
-        last_theme = self.settings.value("theme", "dark")
-        t_idx = self.theme_combo.findData(last_theme)
-        if t_idx != -1:
-            self.theme_combo.setCurrentIndex(t_idx)
-
         self.theme_combo.currentIndexChanged.connect(self.on_theme_change)
 
         # ---------- Export ----------
@@ -69,7 +78,9 @@ class ActionBar(QWidget):
 
         # ---------- Layout ----------
         layout.addWidget(self.project_btn)
-        layout.addWidget(QLabel("Language:"))
+        layout.addWidget(self.git_check) # Add Checkbox
+        layout.addWidget(QLabel("|"))
+        layout.addWidget(QLabel("Lang:"))
         layout.addWidget(self.language_combo)
         layout.addWidget(QLabel("Theme:"))
         layout.addWidget(self.theme_combo)
@@ -80,6 +91,7 @@ class ActionBar(QWidget):
         lang = self.language_combo.itemData(index)
         AppState.selected_language = lang
         self.settings.setValue("language", lang)
+        # If user changes language, we might need to rescan (handled by main window logic ideally)
 
     def on_theme_change(self, index):
         theme = self.theme_combo.itemData(index)
@@ -87,3 +99,18 @@ class ActionBar(QWidget):
 
     def enable_export(self):
         self.export_btn.setEnabled(True)
+    
+    def check_git_status(self, root_path):
+        """ Checks if repo exists and enables/disables checkbox """
+        is_repo = GitScanner.is_git_repo(root_path)
+        self.git_check.setEnabled(is_repo)
+        if is_repo:
+            self.git_check.setText("Git Changes Only")
+            self.git_check.setToolTip("Scan only modified files")
+        else:
+            self.git_check.setText("No Git Repo")
+            self.git_check.setChecked(False)
+
+    def on_git_toggle(self, state):
+        if self.git_toggle_cb:
+            self.git_toggle_cb(self.git_check.isChecked())
