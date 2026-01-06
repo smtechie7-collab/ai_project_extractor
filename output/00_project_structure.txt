@@ -1,0 +1,8 @@
+└── ai_project_extractor
+    ├── core
+    ├── exporters
+    ├── models
+    ├── output
+    ├── rules
+    ├── state
+    └── ui
