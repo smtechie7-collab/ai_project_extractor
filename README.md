@@ -50,7 +50,7 @@ Token Budgeting: Real-time token usage estimation.
 
 Clone the repository:
 
-git clone [https://github.com/YOUR_USERNAME/ai-context-extractor.git](https://github.com/YOUR_USERNAME/ai-context-extractor.git)
+git clone [https://github.com/smtechie7-collab/ai-context-extractor.git](https://github.com/smtechie7-collab/ai-context-extractor.git)
 cd ai-context-extractor
 
 
@@ -109,5 +109,6 @@ Push to the Branch (git push origin feature/AmazingFeature)
 Open a Pull Request
 
 📄 License
+
 
 Distributed under the MIT License. See LICENSE for more information.
