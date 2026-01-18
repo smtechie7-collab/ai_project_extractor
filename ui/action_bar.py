@@ -1,12 +1,12 @@
 from PySide6.QtWidgets import (
     QWidget, QHBoxLayout, QPushButton, QComboBox,
-    QLabel, QMenu, QCheckBox, QMessageBox
+    QLabel, QMenu, QCheckBox
 )
 from PySide6.QtCore import QSettings
 from state.app_state import AppState
 from core.language_registry import LANGUAGE_PROFILES
 from ui.theme_manager import ThemeManager
-from core.git_scanner import GitScanner # 🔥 New Import
+from core.git_scanner import GitScanner
 
 class ActionBar(QWidget):
     def __init__(
@@ -15,7 +15,7 @@ class ActionBar(QWidget):
         export_selected_cb,
         export_all_cb,
         export_zip_cb,
-        git_toggle_cb=None # New Callback
+        git_toggle_cb=None
     ):
         super().__init__()
 
@@ -31,7 +31,7 @@ class ActionBar(QWidget):
         self.project_btn.setFixedHeight(36)
         self.project_btn.clicked.connect(select_project_cb)
         
-        # ---------- Git Filter (NEW) ----------
+        # ---------- Git Filter ----------
         self.git_check = QCheckBox("Git Changes Only")
         self.git_check.setStyleSheet("""
             QCheckBox { color: #e0e0e0; font-weight: bold; }
@@ -40,7 +40,7 @@ class ActionBar(QWidget):
             QCheckBox::indicator:unchecked { background-color: #3e3e42; border-radius: 2px; }
         """)
         self.git_check.setToolTip("Only scan uncommitted/staged files")
-        self.git_check.setEnabled(False) # Disabled until project load
+        self.git_check.setEnabled(False) 
         self.git_check.stateChanged.connect(self.on_git_toggle)
 
         # ---------- Language ----------
@@ -50,13 +50,14 @@ class ActionBar(QWidget):
         for key, profile in LANGUAGE_PROFILES.items():
             self.language_combo.addItem(profile["display"], key)
 
+        # Load last selected language
         last_lang = self.settings.value("language", AppState.selected_language)
         idx = self.language_combo.findData(last_lang)
         if idx != -1:
             self.language_combo.setCurrentIndex(idx)
             AppState.selected_language = last_lang
 
-        self.language_combo.currentIndexChanged.connect(self.on_language_change)
+        # Note: Signal connection ab MainWindow me handle hoga taaki re-scan ho sake
 
         # ---------- Theme ----------
         self.theme_combo = QComboBox()
@@ -78,7 +79,7 @@ class ActionBar(QWidget):
 
         # ---------- Layout ----------
         layout.addWidget(self.project_btn)
-        layout.addWidget(self.git_check) # Add Checkbox
+        layout.addWidget(self.git_check)
         layout.addWidget(QLabel("|"))
         layout.addWidget(QLabel("Lang:"))
         layout.addWidget(self.language_combo)
@@ -86,12 +87,6 @@ class ActionBar(QWidget):
         layout.addWidget(self.theme_combo)
         layout.addStretch(1)
         layout.addWidget(self.export_btn)
-
-    def on_language_change(self, index):
-        lang = self.language_combo.itemData(index)
-        AppState.selected_language = lang
-        self.settings.setValue("language", lang)
-        # If user changes language, we might need to rescan (handled by main window logic ideally)
 
     def on_theme_change(self, index):
         theme = self.theme_combo.itemData(index)
@@ -101,7 +96,6 @@ class ActionBar(QWidget):
         self.export_btn.setEnabled(True)
     
     def check_git_status(self, root_path):
-        """ Checks if repo exists and enables/disables checkbox """
         is_repo = GitScanner.is_git_repo(root_path)
         self.git_check.setEnabled(is_repo)
         if is_repo:

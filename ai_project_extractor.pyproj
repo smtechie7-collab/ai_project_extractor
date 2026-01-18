@@ -53,6 +53,10 @@
     <Compile Include="core\graphviz\js_ts_dependency_graph.py" />
     <Compile Include="core\graphviz\kotlin_di_graph.py" />
     <Compile Include="core\graphviz\kotlin_ui_graph.py" />
+    <Compile Include="core\intelligence\dependency_alert.py" />
+    <Compile Include="core\intelligence\flow_identifier.py" />
+    <Compile Include="core\intelligence\heatmap_generator.py" />
+    <Compile Include="core\intelligence\role_auditor.py" />
     <Compile Include="core\language_profiles.py" />
     <Compile Include="core\language_registry.py" />
     <Compile Include="core\layer_violation_detector.py" />
@@ -63,6 +67,7 @@
     <Compile Include="core\security\sanitizer\SecuritySanitizer.py" />
     <Compile Include="core\structure_builder.py" />
     <Compile Include="core\summary\executive_summary.py" />
+    <Compile Include="core\summary\executive_summary_v2.py" />
     <Compile Include="core\ui_flow_extractor.py" />
     <Compile Include="core\utils\file_reader.py" />
     <Compile Include="exporters\ai_master_index_exporter.py" />
@@ -78,6 +83,7 @@
     <Compile Include="state\output_registry.py" />
     <Compile Include="state\performance_cache.py" />
     <Compile Include="ui\action_bar.py" />
+    <Compile Include="ui\guided_workspace.py" />
     <Compile Include="ui\header.py" />
     <Compile Include="ui\main_window.py" />
     <Compile Include="ui\menus.py" />
@@ -101,6 +107,7 @@
     <Folder Include="core\extractors\python\__pycache__\" />
     <Folder Include="core\graphviz\" />
     <Folder Include="core\graphviz\__pycache__\" />
+    <Folder Include="core\intelligence\" />
     <Folder Include="core\security\" />
     <Folder Include="core\security\sanitizer\" />
     <Folder Include="core\security\sanitizer\__pycache__\" />
