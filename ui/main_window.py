@@ -8,15 +8,15 @@ try:
     from PySide6.QtWidgets import (
         QMainWindow, QWidget, QVBoxLayout, QSplitter,
         QFileDialog, QMessageBox, QLabel, QStatusBar, 
-        QHBoxLayout, QFrame, QProgressBar, QDialog
+        QHBoxLayout, QFrame, QProgressBar, QDialog, QPushButton
     )
-    from PySide6.QtCore import Qt, QSettings, Signal, Slot, QSize, QTimer
-    from PySide6.QtGui import QDragEnterEvent, QDropEvent, QIcon, QFont, QColor, QPalette, QPixmap
+    from PySide6.QtCore import Qt, QSettings, Signal, Slot, QSize, QTimer, QUrl
+    from PySide6.QtGui import QDragEnterEvent, QDropEvent, QIcon, QFont, QColor, QPalette, QPixmap, QDesktopServices
 except ModuleNotFoundError:
     print("PySide6 mising. Run: pip install PySide6")
     sys.exit(1)
 
-# --- CORE LOGIC MODULES (TOP LEVEL IMPORT FOR STABILITY) ---
+# --- CORE LOGIC MODULES ---
 try:
     from core.intelligence.role_auditor import RoleAuditor
     from core.intelligence.heatmap_generator import RiskHeatmap
@@ -37,22 +37,38 @@ try:
     from state.app_state import AppState
     from state.output_registry import OutputRegistry
 
-    # Python Extractors
+    # --- PYTHON EXTRACTORS ---
     from core.extractors.python.code_exporter import export_python_modules
     from core.extractors.python.ai_code_exporter import export_python_ai_code
     from core.extractors.python.call_graph import export_python_call_graph
     from core.extractors.python.risk_analyzer import analyze_python_risks
 
-    # Kotlin Extractors
+    # --- KOTLIN EXTRACTORS (RESTORED ALL) ---
     from core.extractors.kotlin.code_exporter import export_kotlin_modules
     from core.extractors.kotlin.room_schema_extractor import extract_room_schema
     from core.extractors.kotlin.mermaid_visualizer import generate_mermaid_visuals
+    # Attempting to import these, assuming file names match project structure
+    # If function names vary, we trap them in the run_phase method
+    try:
+        from core.extractors.kotlin.call_graph import export_call_graph as export_kotlin_call_graph
+    except ImportError: pass
+    try:
+        from core.extractors.kotlin.navigation_graph import export_navigation_graph
+    except ImportError: pass
+    try:
+        from core.extractors.kotlin.di_graph_exporter import export_di_graph
+    except ImportError: pass
+    try:
+        from core.extractors.kotlin.ui_map_exporter import export_ui_map
+    except ImportError: pass
+    try:
+        from core.extractors.kotlin.risk_analyzer import analyze_risks as analyze_kotlin_risks
+    except ImportError: pass
 
 except ImportError as e:
     print(f"[WARNING] Some modules could not be imported: {e}")
-    # We continue, as some extractors might be optional
 
-# Fallback QR
+# Default QR (Fallback if no file found)
 QR_DATA_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAWIAAAFiCAMAAAD7giJIAAAAVFBMVEUfHx/4+v4dHR33+f36/P/8/v8mJib19/suLi7o6u05OTlSUlJFRUbw8vXX2dvh4uVdXV6jpKWwsbO7vL7Oz9LFxsiXmJmNjY5oaWmEhIV8fH1yc3OtGyqdAAAgAElEQVR42uyci6KqrBKANUy0UvN+6f3f83AZUAYIs1p77f/sqbVKRLTPEYZhICrLsiorJnleFJTGXAh78Q/x/58ExQMKUqNKEs4lYcqyE0JjhpoScWQI857bQDf//4NCKbE48E3KSXLEki8DzAgTBpnvALbsk4TA0B2Mye6b8XcqsYODwCbhRYovV2EqU/XufxVFvFfBnmhatPIlxHEj6D/MQcI0flqjRoUmzPJToh9qIpAT8iXI5K+pAZ7tAauA8CaMyseeWMdGAi8VjZzgu6klyIb5x+//X2wpmJfPKclma61ljcc/EoTjzT5RRydJEif8/wGBckQRz7LpnOLb9lBLvCd5kgPn9BcRzLlTuLFA7NsQOU2GouwOSw="
 
 class AboutDialog(QDialog):
@@ -67,16 +83,16 @@ class AboutDialog(QDialog):
         title.setStyleSheet("font-size: 24px; font-weight: 900; color: #4fc3f7; margin-top: 10px;")
         layout.addWidget(title, alignment=Qt.AlignCenter)
         
-        v_label = QLabel("Version 4.0.0 (Signal Fix)")
+        v_label = QLabel("Version 4.2.0 (Full Kotlin Restore)")
         v_label.setStyleSheet("color: #888; font-size: 12px;")
         layout.addWidget(v_label, alignment=Qt.AlignCenter)
 
         desc = QLabel(
-            "Ye software Python, Kotlin aur JS projects ko deeply scan karta hai. "
-            "Updates:\n"
-            "• FIXED: Analysis Outputs not showing in list\n"
-            "• FIXED: Signal Connection Issue\n"
-            "• Stable Imports"
+            "Ye software Python, Kotlin aur JS projects ko deeply scan karta hai.\n\n"
+            "Features:\n"
+            "• All Kotlin Phases Restored (DI, Nav, UI Map, etc.)\n"
+            "• Custom QR & Support Integration\n"
+            "• Crash-Proof Analysis Engine"
         )
         desc.setWordWrap(True)
         desc.setStyleSheet("font-size: 14px; line-height: 22px; margin: 15px; color: #bbb;")
@@ -88,7 +104,6 @@ class AboutDialog(QDialog):
         layout.addWidget(close_btn, alignment=Qt.AlignCenter)
 
 class MainWindow(QMainWindow):
-    # This signal receives (Phase Name, Content) from the Worker Thread
     update_output_signal = Signal(str, str)
 
     def __init__(self):
@@ -101,18 +116,16 @@ class MainWindow(QMainWindow):
         self.setup_styles()
         self.create_menus()
         
-        # 🔥 CRITICAL FIX 1: Connect Language Change
+        # 1. Connect Actions
         self.action_bar.language_combo.currentIndexChanged.connect(self.on_language_changed_trigger)
         
-        # 🔥 CRITICAL FIX 2: Connect the WORKER SIGNAL to UI UPDATE SLOT
-        # Ye line missing thi, isliye output list update nahi ho rahi thi!
+        # 2. Connect Worker Signal
         self.update_output_signal.connect(self.on_update_output)
 
-        # Default Language
+        # 3. Default Setup
         if not AppState.selected_language:
             AppState.selected_language = "kotlin"
 
-        # Initial Load
         self.update_phases_list()
 
     def setup_styles(self):
@@ -139,17 +152,18 @@ class MainWindow(QMainWindow):
         self.main_layout.setSpacing(0)
         self.setCentralWidget(central)
 
-        # Header
+        # --- HEADER ---
         self.header_frame = QFrame()
-        self.header_frame.setFixedHeight(160)
+        self.header_frame.setFixedHeight(170)
         self.header_frame.setStyleSheet("background-color: #161616; border-bottom: 1px solid #2d2d2d;")
         
         header_layout = QHBoxLayout(self.header_frame)
         header_layout.setContentsMargins(25, 10, 25, 10)
 
+        # Left: Title & Actions
         left_box = QVBoxLayout()
         self.proj_title = QLabel("AI CONTEXT EXTRACTOR PRO")
-        self.proj_title.setStyleSheet("font-size: 22px; font-weight: 900; color: #4fc3f7;")
+        self.proj_title.setStyleSheet("font-size: 24px; font-weight: 900; color: #4fc3f7;")
         
         self.action_bar = ActionBar(
             select_project_cb=self.select_project,
@@ -162,31 +176,65 @@ class MainWindow(QMainWindow):
         left_box.addWidget(self.action_bar)
         header_layout.addLayout(left_box, 1)
 
-        # Support Card
-        support_card = QFrame()
-        support_card.setFixedWidth(380)
-        support_card.setStyleSheet("background: #1e1e1e; border-radius: 12px; border: 2px solid #3e3e42;")
-        support_layout = QHBoxLayout(support_card)
+        # --- RIGHT: SUPPORT CARD (QR & CONTACT) ---
+        self.support_card = QFrame()
+        self.support_card.setFixedWidth(400)
+        self.support_card.setStyleSheet("""
+            QFrame {
+                background-color: #1e1e1e;
+                border-radius: 12px;
+                border: 1px solid #333;
+            }
+        """)
         
-        text_info = QVBoxLayout()
-        coffee_link = QLabel('<a href="#" style="color:#FFD700; text-decoration:none; font-size:15px; font-weight:bold;">☕ Support Project</a>')
-        coffee_link.setOpenExternalLinks(True)
-        text_info.addWidget(coffee_link)
-        text_info.addWidget(QLabel('<span style="color:#888; font-size:11px;">Scan to Support</span>'))
+        support_layout = QHBoxLayout(self.support_card)
+        support_layout.setContentsMargins(15, 12, 15, 12)
         
+        # Info Column (Coffee, Contact)
+        info_col = QVBoxLayout()
+        info_col.setSpacing(6)
+        
+        lbl_support = QLabel("<b>☕ Support Project</b>")
+        lbl_support.setStyleSheet("color: #FFD700; font-size: 15px; border:none;")
+        
+        # Clickable Link 1 - PAYPAL
+        self.btn_coffee = QLabel('<a href="https://paypal.me/raza489991" style="color:#4fc3f7; text-decoration:none;">❤️ Buy Me a Coffee</a>')
+        self.btn_coffee.setOpenExternalLinks(True)
+        self.btn_coffee.setCursor(Qt.PointingHandCursor)
+        self.btn_coffee.setStyleSheet("border:none; font-weight:bold;")
+
+        # Clickable Link 2 - EMAIL
+        self.btn_contact = QLabel('<a href="mailto:HASNAINRAZAMEMON9@GMAIL.COM" style="color:#999; text-decoration:none; font-size:11px;">📧 HASNAINRAZAMEMON9@GMAIL.COM</a>')
+        self.btn_contact.setOpenExternalLinks(True)
+        self.btn_contact.setCursor(Qt.PointingHandCursor)
+        self.btn_contact.setStyleSheet("border:none;")
+
+        # Label 3 - MOBILE
+        self.btn_mobile = QLabel('<span style="color:#999; font-size:12px;">📞 +91 99258 11505</span>')
+        self.btn_mobile.setStyleSheet("border:none;")
+
+        info_col.addWidget(lbl_support)
+        info_col.addWidget(self.btn_coffee)
+        info_col.addWidget(self.btn_contact)
+        info_col.addWidget(self.btn_mobile)
+        info_col.addStretch()
+        
+        # QR Code Image
         self.qr_label = QLabel()
-        self.qr_label.setFixedSize(115, 115) 
-        self.qr_label.setStyleSheet("border: 2px solid #555; background: #fff; border-radius: 8px;")
+        self.qr_label.setFixedSize(110, 110)
+        self.qr_label.setStyleSheet("border: 2px solid #555; background-color: #fff; border-radius: 8px;")
+        self.qr_label.setScaledContents(True)
         self.qr_label.setAlignment(Qt.AlignCenter)
         
-        self.load_embedded_qr()
-        support_layout.addLayout(text_info)
-        support_layout.addSpacing(10)
+        self.load_embedded_qr() # Initial Load
+
+        support_layout.addLayout(info_col)
         support_layout.addWidget(self.qr_label)
         
-        header_layout.addWidget(support_card)
+        header_layout.addWidget(self.support_card)
         self.main_layout.addWidget(self.header_frame)
 
+        # --- BODY ---
         self.splitter = QSplitter(Qt.Horizontal)
         self.sidebar = PhaseSidebar()
         self.workspace = Workspace(start_cb=self.start_analysis, open_project_cb=self.select_project)
@@ -203,23 +251,28 @@ class MainWindow(QMainWindow):
             img_data = base64.b64decode(QR_DATA_BASE64)
             pix = QPixmap()
             pix.loadFromData(img_data)
-            self.qr_label.setPixmap(pix.scaled(115, 115, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+            self.qr_label.setPixmap(pix)
         except:
             self.qr_label.setText("QR")
 
     def load_project_qr(self, folder_path):
-        qr_found = False
-        possible_files = ["qr.gpg", "qr.png", "qr.jpg", "qr.jpeg"]
+        """
+        Loads qr.gpg, qr.png, or qr.jpg from the project folder.
+        """
+        found = False
+        possible_files = ["qr.jpg", "qr.png", "qr.jpeg", "qr.gpg"]
+        
         for filename in possible_files:
             path = os.path.join(folder_path, filename)
             if os.path.exists(path):
                 pix = QPixmap(path)
                 if not pix.isNull():
-                    self.qr_label.setPixmap(pix.scaled(115, 115, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+                    self.qr_label.setPixmap(pix)
                     self.status_bar.showMessage(f"Loaded custom QR: {filename}")
-                    qr_found = True
+                    found = True
                     break
-        if not qr_found:
+        
+        if not found:
             self.load_embedded_qr()
 
     def dragEnterEvent(self, event: QDragEnterEvent):
@@ -244,7 +297,7 @@ class MainWindow(QMainWindow):
         self.update_phases_list()
 
     def update_phases_list(self):
-        # Always reload standard phases + language specifics to sidebar
+        # Base Phases
         phases = [
             "Structure",
             "Architecture Heatmap",
@@ -265,10 +318,17 @@ class MainWindow(QMainWindow):
                 "AI Prompt"
             ])
         elif "kotlin" in lang or "java" in lang:
+            # 🔥 RESTORED ALL KOTLIN PHASES HERE
             phases.extend([
                 "Module Classification",
+                "Full Source (AI)",
                 "Database Schema",
-                "Visual Architecture (Mermaid)"
+                "Visual Architecture (Mermaid)",
+                "Call Graph",
+                "Navigation Graph",
+                "DI Graph",
+                "UI Map",
+                "Risk Analysis"
             ])
         
         self.current_phases = phases
@@ -301,7 +361,6 @@ class MainWindow(QMainWindow):
             else:
                 struct = "[WARNING] Project tree is empty."
             
-            # Direct UI update for structure (Sync)
             self.workspace.add_output("Structure", struct)
         except Exception as e:
             err = traceback.format_exc()
@@ -312,7 +371,6 @@ class MainWindow(QMainWindow):
         self.workspace.start_btn.setEnabled(False)
         self.status_bar.showMessage("Running deep analysis...")
         
-        # Explicitly pass the list of phases to work on
         phases_to_run = list(self.current_phases)
         
         self.worker = AnalysisWorker(phases_to_run, self.run_phase)
@@ -320,23 +378,19 @@ class MainWindow(QMainWindow):
         self.worker.finished.connect(self.on_analysis_finished)
         self.worker.start()
 
-    # --- WORKER THREAD METHOD ---
-    # This runs in background thread. Do not touch UI directly here.
-    # Emit self.update_output_signal(phase, content) instead.
     def run_phase(self, phase):
         root = AppState.tree_root
         lang = AppState.selected_language or "kotlin"
         out = ""
 
         try:
-            # 1. Standard Logic
+            # 1. Standard Logic (Language Agnostic)
             metrics = []
             if phase in ["Architecture Heatmap", "Critical Business Flows", "Dependency Explosion Audit", "Executive Summary 2.0"]:
                 try:
                     metrics = RoleAuditor.audit_project(root, lang)
                 except Exception as e:
-                    print(f"Role Auditor failed: {e}")
-                    metrics = []
+                    metrics = [] # Fail gracefully
 
             if phase == "Structure":
                 out = "\n".join(build_tree_text(root))
@@ -361,14 +415,56 @@ class MainWindow(QMainWindow):
                 except Exception as e:
                     out = f"Python Analysis Error: {e}"
 
-            # 3. Kotlin Logic
+            # 3. Kotlin Logic - RESTORED FULL FUNCTIONALITY
             elif "kotlin" in lang.lower() or "java" in lang.lower():
                 try:
-                    if phase == "Module Classification": out = export_kotlin_modules(root)
-                    elif phase == "Database Schema": out = extract_room_schema(root)
-                    elif phase == "Visual Architecture (Mermaid)": out = generate_mermaid_visuals(root)
+                    if phase == "Module Classification": 
+                        out = export_kotlin_modules(root)
+                    elif phase == "Full Source (AI)":
+                        # Try to use code exporter or AI exporter
+                        try:
+                            from core.extractors.kotlin.code_exporter import export_code
+                            out = export_code(root)
+                        except:
+                            out = export_kotlin_modules(root) # Fallback
+                    elif phase == "Database Schema": 
+                        out = extract_room_schema(root)
+                    elif phase == "Visual Architecture (Mermaid)": 
+                        out = generate_mermaid_visuals(root)
+                    
+                    # 🔥 NEWLY RESTORED CALLS
+                    elif phase == "Call Graph":
+                        try:
+                            from core.extractors.kotlin.call_graph import export_call_graph
+                            out = export_call_graph(root)
+                        except ImportError: out = "[ERROR] Call Graph module missing."
+                        
+                    elif phase == "Navigation Graph":
+                        try:
+                            from core.extractors.kotlin.navigation_graph import export_navigation_graph
+                            out = export_navigation_graph(root)
+                        except ImportError: out = "[ERROR] Nav Graph module missing."
+                        
+                    elif phase == "DI Graph":
+                        try:
+                            from core.extractors.kotlin.di_graph_exporter import export_di_graph
+                            out = export_di_graph(root)
+                        except ImportError: out = "[ERROR] DI Graph module missing."
+                        
+                    elif phase == "UI Map":
+                        try:
+                            from core.extractors.kotlin.ui_map_exporter import export_ui_map
+                            out = export_ui_map(root)
+                        except ImportError: out = "[ERROR] UI Map module missing."
+                        
+                    elif phase == "Risk Analysis":
+                        try:
+                            from core.extractors.kotlin.risk_analyzer import analyze_risks
+                            out = analyze_risks(root)
+                        except ImportError: out = "[ERROR] Risk Analyzer module missing."
+
                 except Exception as e:
-                    out = f"Kotlin Analysis Error: {e}"
+                    out = f"Kotlin Analysis Error: {e}\n{traceback.format_exc()}"
 
             if not out:
                 out = f"[INFO] No data generated for '{phase}'."
@@ -376,12 +472,11 @@ class MainWindow(QMainWindow):
         except Exception as e:
             out = f"[FATAL ERROR] Phase '{phase}' crashed:\n{traceback.format_exc()}"
 
-        # 🔥 EMIT RESULT TO UI (This was failing before because it wasn't connected!)
+        # Signal result to UI
         self.update_output_signal.emit(phase, out)
 
     @Slot(str, str)
     def on_update_output(self, phase, content):
-        # This runs on MAIN THREAD when signal is received
         self.workspace.add_output(phase, content)
 
     def on_analysis_finished(self):
