@@ -7,13 +7,14 @@ from PySide6.QtGui import QGuiApplication, QFont
 from state.output_registry import OutputRegistry
 from ui.widgets import PrimaryButton, SecondaryButton
 from core.ai.prompt_templates import PROMPT_TEMPLATES
-from core.security.sanitizer import SecuritySanitizer
+# 🔥 FIXED IMPORT: Was 'from core.security.sanitizer', now pointing to the file explicitly
+from core.security.sanitizer.SecuritySanitizer import SecuritySanitizer
 
 class Workspace(QWidget):
     def __init__(self, start_cb, open_project_cb):
         super().__init__()
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(15, 15, 15, 15) # Thoda padding badhaya
+        layout.setContentsMargins(15, 15, 15, 15)
         layout.setSpacing(10)
         
         # --- TOP BAR ---
@@ -45,13 +46,13 @@ class Workspace(QWidget):
         top.addWidget(QLabel("Task:"))
         top.addWidget(self.template_selector, 1)
         top.addWidget(self.safe_mode_cb)
-        top.addWidget(self.wrap_cb) # Added Wrap
+        top.addWidget(self.wrap_cb)
         top.addWidget(self.copy_btn)
         
-        # --- EDITOR (Bada aur Saaf) ---
+        # --- EDITOR ---
         self.output = QTextEdit()
         self.output.setReadOnly(True)
-        self.output.setLineWrapMode(QTextEdit.NoWrap) # Default: No Wrap (Code style)
+        self.output.setLineWrapMode(QTextEdit.NoWrap)
         
         # Set Modern Font
         font = QFont("Consolas", 11)
@@ -61,7 +62,7 @@ class Workspace(QWidget):
         self.output.setStyleSheet("""
             QTextEdit {
                 background-color: #1e1e1e;
-                color: #dcdcaa;  /* Code-like yellowish text */
+                color: #dcdcaa;
                 border: 1px solid #3e3e42;
                 border-radius: 4px;
                 padding: 8px;
@@ -86,7 +87,7 @@ class Workspace(QWidget):
         bottom.addWidget(self.start_btn)
         
         layout.addLayout(top)
-        layout.addWidget(self.output, 1) # '1' means expand to fill space
+        layout.addWidget(self.output, 1)
         layout.addWidget(self.progress)
         layout.addLayout(bottom)
         
@@ -120,19 +121,16 @@ class Workspace(QWidget):
         
         QGuiApplication.clipboard().setText(final_text)
         
-        # UX Feedback: Button Animation
         original_text = self.copy_btn.text()
         self.copy_btn.setText("✅ Copied!")
         self.copy_btn.setStyleSheet("background-color: #2da44e; color: white; border: none; border-radius: 4px;")
         self.copy_btn.setEnabled(False)
         
-        # Reset after 1.5 seconds
         QTimer.singleShot(1500, lambda: self._reset_copy_btn(original_text))
 
     def _reset_copy_btn(self, text):
         self.copy_btn.setText(text)
         self.copy_btn.setEnabled(True)
-        # Re-apply secondary button style
         self.copy_btn.setStyleSheet("background-color: #3e3e42; color: #e0e0e0; border: 1px solid #505050; border-radius: 4px;")
 
     def update_progress(self, v, p):

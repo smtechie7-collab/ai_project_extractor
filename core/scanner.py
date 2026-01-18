@@ -39,7 +39,7 @@ def scan_directory(root_path: str, whitelist_files: set = None) -> Node:
 
         # Skip Junk
         if item.startswith(".") and item != ".gitignore": # Keep gitignore sometimes useful
-             if item not in [".github"]: # Maybe keep github actions?
+             if item not in [".github"]:
                  continue
         if item in {"__pycache__", "build", "dist", "node_modules", "venv", ".git", ".idea"}:
             continue
@@ -47,7 +47,7 @@ def scan_directory(root_path: str, whitelist_files: set = None) -> Node:
         if os.path.isdir(full_path):
             # Recurse
             child_node = scan_directory(full_path, whitelist_files)
-            # Only add directory if it has content (or if we are not filtering)
+            # Only add directory if it has content
             if child_node.children:
                 root.children.append(child_node)
                 has_relevant_children = True
@@ -55,9 +55,11 @@ def scan_directory(root_path: str, whitelist_files: set = None) -> Node:
             # File Handling
             is_relevant = is_supported_file(full_path)
             
-            # 🔥 Git Filter Check
+            # 🔥 Git Filter Check (Robust Path Normalization)
             if whitelist_files is not None:
-                if full_path not in whitelist_files:
+                # Ensure we match normalized paths (Handle windows/linux separators)
+                norm_path = os.path.normpath(full_path)
+                if norm_path not in whitelist_files:
                     is_relevant = False
 
             if is_relevant:

@@ -43,30 +43,32 @@ try:
     from core.extractors.python.call_graph import export_python_call_graph
     from core.extractors.python.risk_analyzer import analyze_python_risks
 
-    # --- KOTLIN EXTRACTORS (RESTORED ALL) ---
+    # --- KOTLIN EXTRACTORS (CORRECTED IMPORTS) ---
+    # These names now match the definitions in the core files exactly
     from core.extractors.kotlin.code_exporter import export_kotlin_modules
     from core.extractors.kotlin.room_schema_extractor import extract_room_schema
     from core.extractors.kotlin.mermaid_visualizer import generate_mermaid_visuals
-    # Attempting to import these, assuming file names match project structure
-    # If function names vary, we trap them in the run_phase method
+    
+    # Safe imports for individual Kotlin modules with CORRECT function names
     try:
-        from core.extractors.kotlin.call_graph import export_call_graph as export_kotlin_call_graph
+        from core.extractors.kotlin.call_graph import export_kotlin_call_graph
     except ImportError: pass
     try:
-        from core.extractors.kotlin.navigation_graph import export_navigation_graph
+        from core.extractors.kotlin.navigation_graph import export_kotlin_navigation_graph
     except ImportError: pass
     try:
-        from core.extractors.kotlin.di_graph_exporter import export_di_graph
+        from core.extractors.kotlin.di_graph_exporter import export_kotlin_di_graph
     except ImportError: pass
     try:
-        from core.extractors.kotlin.ui_map_exporter import export_ui_map
+        from core.extractors.kotlin.ui_map_exporter import export_kotlin_ui_map
     except ImportError: pass
     try:
-        from core.extractors.kotlin.risk_analyzer import analyze_risks as analyze_kotlin_risks
+        from core.extractors.kotlin.risk_analyzer import analyze_kotlin_risks
     except ImportError: pass
 
 except ImportError as e:
     print(f"[WARNING] Some modules could not be imported: {e}")
+    traceback.print_exc()
 
 # Default QR (Fallback if no file found)
 QR_DATA_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAWIAAAFiCAMAAAD7giJIAAAAVFBMVEUfHx/4+v4dHR33+f36/P/8/v8mJib19/suLi7o6u05OTlSUlJFRUbw8vXX2dvh4uVdXV6jpKWwsbO7vL7Oz9LFxsiXmJmNjY5oaWmEhIV8fH1yc3OtGyqdAAAgAElEQVR42uyci6KqrBKANUy0UvN+6f3f83AZUAYIs1p77f/sqbVKRLTPEYZhICrLsiorJnleFJTGXAh78Q/x/58ExQMKUqNKEs4lYcqyE0JjhpoScWQI857bQDf//4NCKbE48E3KSXLEki8DzAgTBpnvALbsk4TA0B2Mye6b8XcqsYODwCbhRYovV2EqU/XufxVFvFfBnmhatPIlxHEj6D/MQcI0flqjRoUmzPJToh9qIpAT8iXI5K+pAZ7tAauA8CaMyseeWMdGAi8VjZzgu6klyIb5x+//X2wpmJfPKclma61ljcc/EoTjzT5RRydJEif8/wGBckQRz7LpnOLb9lBLvCd5kgPn9BcRzLlTuLFA7NsQOU2GouwOSw="
@@ -83,7 +85,7 @@ class AboutDialog(QDialog):
         title.setStyleSheet("font-size: 24px; font-weight: 900; color: #4fc3f7; margin-top: 10px;")
         layout.addWidget(title, alignment=Qt.AlignCenter)
         
-        v_label = QLabel("Version 4.2.0 (Full Kotlin Restore)")
+        v_label = QLabel("Version 4.2.1 (Fixed Kotlin Analysis)")
         v_label.setStyleSheet("color: #888; font-size: 12px;")
         layout.addWidget(v_label, alignment=Qt.AlignCenter)
 
@@ -415,53 +417,49 @@ class MainWindow(QMainWindow):
                 except Exception as e:
                     out = f"Python Analysis Error: {e}"
 
-            # 3. Kotlin Logic - RESTORED FULL FUNCTIONALITY
+            # 3. Kotlin Logic - CORRECTED CALLS
             elif "kotlin" in lang.lower() or "java" in lang.lower():
                 try:
                     if phase == "Module Classification": 
                         out = export_kotlin_modules(root)
                     elif phase == "Full Source (AI)":
-                        # Try to use code exporter or AI exporter
-                        try:
-                            from core.extractors.kotlin.code_exporter import export_code
-                            out = export_code(root)
-                        except:
-                            out = export_kotlin_modules(root) # Fallback
+                        # Logic Fix: Use standard module export as fallback for now
+                        out = export_kotlin_modules(root)
                     elif phase == "Database Schema": 
                         out = extract_room_schema(root)
                     elif phase == "Visual Architecture (Mermaid)": 
                         out = generate_mermaid_visuals(root)
                     
-                    # 🔥 NEWLY RESTORED CALLS
+                    # 🔥 CORRECTED FUNCTION CALLS BELOW
                     elif phase == "Call Graph":
                         try:
-                            from core.extractors.kotlin.call_graph import export_call_graph
-                            out = export_call_graph(root)
-                        except ImportError: out = "[ERROR] Call Graph module missing."
-                        
+                            from core.extractors.kotlin.call_graph import export_kotlin_call_graph
+                            out = export_kotlin_call_graph(root)
+                        except ImportError: out = "[ERROR] Call Graph module missing or naming error."
+                    
                     elif phase == "Navigation Graph":
                         try:
-                            from core.extractors.kotlin.navigation_graph import export_navigation_graph
-                            out = export_navigation_graph(root)
-                        except ImportError: out = "[ERROR] Nav Graph module missing."
-                        
+                            from core.extractors.kotlin.navigation_graph import export_kotlin_navigation_graph
+                            out = export_kotlin_navigation_graph(root)
+                        except ImportError: out = "[ERROR] Nav Graph module missing or naming error."
+                    
                     elif phase == "DI Graph":
                         try:
-                            from core.extractors.kotlin.di_graph_exporter import export_di_graph
-                            out = export_di_graph(root)
-                        except ImportError: out = "[ERROR] DI Graph module missing."
-                        
+                            from core.extractors.kotlin.di_graph_exporter import export_kotlin_di_graph
+                            out = export_kotlin_di_graph(root)
+                        except ImportError: out = "[ERROR] DI Graph module missing or naming error."
+                    
                     elif phase == "UI Map":
                         try:
-                            from core.extractors.kotlin.ui_map_exporter import export_ui_map
-                            out = export_ui_map(root)
-                        except ImportError: out = "[ERROR] UI Map module missing."
-                        
+                            from core.extractors.kotlin.ui_map_exporter import export_kotlin_ui_map
+                            out = export_kotlin_ui_map(root)
+                        except ImportError: out = "[ERROR] UI Map module missing or naming error."
+                    
                     elif phase == "Risk Analysis":
                         try:
-                            from core.extractors.kotlin.risk_analyzer import analyze_risks
-                            out = analyze_risks(root)
-                        except ImportError: out = "[ERROR] Risk Analyzer module missing."
+                            from core.extractors.kotlin.risk_analyzer import analyze_kotlin_risks
+                            out = analyze_kotlin_risks(root)
+                        except ImportError: out = "[ERROR] Risk Analyzer module missing or naming error."
 
                 except Exception as e:
                     out = f"Kotlin Analysis Error: {e}\n{traceback.format_exc()}"
