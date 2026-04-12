@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <files-path name="invoices" path="invoices/" />
+    <files-path name="business" path="business/" />
+    <cache-path name="temp_pdf" path="pdf_temp/" />
+</paths>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Path to save generated PDF invoices -->
+    <files-path name="invoices" path="invoices/"/>
+    <external-path name="external_files" path="."/>
+    <cache-path name="cache" path="."/>
+</paths>

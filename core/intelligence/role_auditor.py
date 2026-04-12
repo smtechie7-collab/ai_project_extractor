@@ -1,6 +1,6 @@
 ﻿import os
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List, Dict
 
 @dataclass
@@ -12,16 +12,30 @@ class RoleMetric:
     is_god_class: bool
     risk_score: int  # 0 to 100
 
+@dataclass
+class ProjectStats:
+    counts: Dict[str, int] = field(default_factory=lambda: {
+        "VIEWMODEL": 0,
+        "UISTATE": 0,
+        "REPOSITORY": 0,
+        "REPO_IMPL": 0,
+        "SCREEN": 0,
+        "WORKER": 0,
+        "USECASE": 0,
+        "DAO": 0,
+        "OTHER": 0
+    })
+    total_lines: int = 0
+
 class RoleAuditor:
     """
     Analyzes files based on their architectural roles.
-    Answers: 'Is this ViewModel too heavy?', 'Is UI touching DAO?'
+    Now tracks exact counts for ViewModels, States, Repos, and Workers.
     """
     
-    GOD_CLASS_THRESHOLD = 500  # Lines
-    DEPENDENCY_THRESHOLD = 7
+    GOD_CLASS_THRESHOLD = 500
+    DEPENDENCY_THRESHOLD = 8
     
-    # Patterns for different languages
     IMPORT_PATTERN = {
         "kotlin": re.compile(r"import\s+([\w.]+)"),
         "python": re.compile(r"import\s+(\w+)|from\s+(\w+)\s+import"),
@@ -29,43 +43,52 @@ class RoleAuditor:
     }
 
     @staticmethod
-    def audit_project(tree_root, language: str) -> List[RoleMetric]:
+    def audit_project(tree_root, language: str):
         metrics = []
+        stats = ProjectStats()
         
         def walk(node):
             if not node.is_dir:
-                metrics.append(RoleAuditor.audit_file(node.path, language))
+                metric = RoleAuditor.audit_file(node.path, language)
+                metrics.append(metric)
+                
+                # Update Stats
+                role = metric.role
+                if role in stats.counts:
+                    stats.counts[role] += 1
+                else:
+                    stats.counts["OTHER"] += 1
+                stats.total_lines += metric.line_count
+                
             for child in node.children:
                 walk(child)
         
         walk(tree_root)
-        return metrics
+        return metrics, stats
 
     @staticmethod
     def audit_file(path: str, lang: str) -> RoleMetric:
         from core.utils.file_reader import read_text_file
-        from core.classifier import classify_file
         
         content = read_text_file(path)
         lines = content.splitlines()
         line_count = len(lines)
         
-        # Calculate Dependencies
-        pattern = RoleAuditor.IMPORT_PATTERN.get(lang, RoleAuditor.IMPORT_PATTERN["kotlin"])
+        # Dependency Detection
+        pattern = RoleAuditor.IMPORT_PATTERN.get(lang.lower(), RoleAuditor.IMPORT_PATTERN["kotlin"])
         deps = set(pattern.findall(content))
         dep_count = len(deps)
         
-        role = classify_file(path, content)
+        # Refined Classification Logic
+        role = RoleAuditor.classify_refined(path, content)
         
-        # God Class Logic
-        is_god = line_count > RoleAuditor.GOD_CLASS_THRESHOLD or dep_count > RoleAuditor.DEPENDENCY_THRESHOLD
-        
-        # Risk Scoring
+        # God Class & Risk Logic
+        is_god = line_count > RoleAuditor.GOD_CLASS_THRESHOLD
         score = 0
-        if line_count > 300: score += 30
+        if line_count > 300: score += 20
         if line_count > 600: score += 40
-        if dep_count > 5: score += 15
-        if dep_count > 10: score += 15
+        if dep_count > 8: score += 20
+        if "!!" in content: score += 10 # Kotlin specific risk
         
         return RoleMetric(
             path=path,
@@ -77,15 +100,30 @@ class RoleAuditor:
         )
 
     @staticmethod
+    def classify_refined(path: str, content: str) -> str:
+        name = os.path.basename(path).lower()
+        
+        # Priority Order for Classification
+        if "viewmodel" in name: return "VIEWMODEL"
+        if "uistate" in name or "state.kt" in name: return "UISTATE"
+        if "repositoryimpl" in name or "repoimpl" in name: return "REPO_IMPL"
+        if "repository" in name: return "REPOSITORY"
+        if "worker" in name: return "WORKER"
+        if "usecase" in name: return "USECASE"
+        if "screen" in name or "@composable" in content: return "SCREEN"
+        if "dao" in name or "@dao" in content.lower(): return "DAO"
+        if "entity" in name or "@entity" in content.lower(): return "ENTITY"
+        
+        return "OTHER"
+
+    @staticmethod
     def detect_violations(metrics: List[RoleMetric]) -> List[str]:
         violations = []
         for m in metrics:
-            # Rule: UI should not have too many dependencies
-            if m.role == "SCREEN" and m.dependency_count > 10:
-                violations.append(f"🚩 UI Logic Heavy: {os.path.basename(m.path)} manages too many imports.")
-            
-            # Rule: ViewModel size
-            if m.role == "VIEWMODEL" and m.is_god_class:
-                violations.append(f"🔥 God ViewModel: {os.path.basename(m.path)} is becoming hard to maintain.")
-        
+            if m.role == "SCREEN" and m.dependency_count > 12:
+                violations.append(f"🚩 UI Overload: {os.path.basename(m.path)} has too many dependencies.")
+            if m.role == "REPO_IMPL" and m.line_count > 400:
+                violations.append(f"🔥 Fat Repository: {os.path.basename(m.path)} logic is too complex.")
+            if m.is_god_class:
+                violations.append(f"💀 God Object: {os.path.basename(m.path)} exceeds maintenance limits.")
         return violations
