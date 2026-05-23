@@ -1,16 +1,24 @@
-﻿import os
+﻿# -*- coding: utf-8 -*-
+"""
+ui/main_window.py
+=================
+Main GUI window class for AI Context Extractor Pro.
+Includes multi-threaded Feature Filter Extraction with an increased file safety limit of 100.
+"""
+
+import os
 import sys
 import base64
 import traceback
 
-# PySide6 components
+# PySide6 components safely wrapped
 try:
     from PySide6.QtWidgets import (
-        QMainWindow, QWidget, QVBoxLayout, QSplitter,
+        QApplication, QMainWindow, QWidget, QVBoxLayout, QSplitter,
         QFileDialog, QMessageBox, QLabel, QStatusBar, 
         QHBoxLayout, QFrame, QProgressBar, QDialog, QPushButton
     )
-    from PySide6.QtCore import Qt, QSettings, Signal, Slot, QSize, QTimer, QUrl
+    from PySide6.QtCore import Qt, QSettings, Signal, Slot, QSize, QTimer, QUrl, QThread
     from PySide6.QtGui import QDragEnterEvent, QDropEvent, QIcon, QFont, QColor, QPalette, QPixmap, QDesktopServices
 except ModuleNotFoundError:
     print("PySide6 missing. Run: pip install PySide6")
@@ -28,6 +36,7 @@ try:
     from core.language_profiles import LANGUAGE_PHASES
     from core.ai.prompt_generator import generate_ai_prompt
     from core.git_scanner import GitScanner
+    from core.extractors.feature_filter_extractor import FeatureFilterExtractor
     
     # UI Helpers
     from ui.sidebar import PhaseSidebar
@@ -69,8 +78,9 @@ except ImportError as e:
     print(f"[WARNING] Some modules could not be imported: {e}")
     traceback.print_exc()
 
-# Default QR (Fallback if no file found)
-QR_DATA_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAWIAAAFiCAMAAAD7giJIAAAAVFBMVEUfHx/4+v4dHR33+f36/P/8/v8mJib19/suLi7o6u05OTlSUlJFRUbw8vXX2dvh4uVdXV6jpKWwsbO7vL7Oz9LFxsiXmJmNjY5oaWmEhIV8fH1yc3OtGyqdAAAgAElEQVR42uyci6KqrBKANUy0UvN+6f3f83AZUAYIs1p77f/sqbVKRLTPEYZhICrLsiorJnleFJTGXAh78Q/x/58ExQMKUqNKEs4lYcqyE0JjhpoScWQI857bQDf//4NCKbE48E3KSXLEki8DzAgTBpnvALbsk4TA0B2Mye6b8XcqsYODwCbhRYovV2EqU/XufxVFvFfBnmhatPIlxHEj6D/MQcI0flqjRoUmzPJToh9qIpAT8iXI5K+pAZ7tAauA8CaMyseeWMdGAi8VjZzgu6klyIb5x+//X2wpmJfPKclma61ljcc/EoTjzT5RRydJEif8/wGBckQRz7LpnOLb9lBLvCd5kgPn9BcRzLlTuLFA7NsQOU2GouwOSw="
+# Default QR Data (Base64)
+QR_DATA_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAWIAAAFiCAMAAAD7giJIAAAAVFBMVEUfHx/4+v4dHR33+f36/P/8/v8mJib19/suLi7o6u05OTlSUlJFRUbw8vXX2dvh4uVdXV6jpKWwsbO7vL7Oz9LFxsiXmJmNjY5oaWmEhIV8fH1yc3OtGyqdAAAgAElEQVR42uyci6KqrBKANUy0UvN+6f3f83AZUAYIs1p77f/sqbVKRLTPEYZhICrLsiorJnleFJSQXHe7//8NCKbE48E3KSXLEki8DzAgTBpnvALbsk4TA0B2Mye6b8XcqsYODwCbhRYovV2EqU/XufxVFvFfBnmhatPIlxHEj6D/MQcI0flqjRoUmzPJToh9qIpAT8iXI5K+pAZ7tAauA8CaMyseeWMdGAi8VjZzgu6klyIb5x+//X2wpmJfPKclma61ljcc/EoTjzT5RRydJEif8/wGBckQRz7LpnOLb9lBLvCd5kgPn9BcRzLlTuLFA7NsQOU2GouwOSw="
+
 
 class AboutDialog(QDialog):
     def __init__(self, parent=None):
@@ -104,6 +114,30 @@ class AboutDialog(QDialog):
         close_btn.mousePressEvent = lambda e: self.close()
         layout.addWidget(close_btn, alignment=Qt.AlignCenter)
 
+
+class FeatureWorker(QThread):
+    """
+    Asynchronous Worker to filter and extract source code files 
+    by specific feature keywords without locking the main UI thread.
+    """
+    done = Signal(str, str)
+
+    def __init__(self, query: str, root, max_files: int = 100):
+        super().__init__()
+        self.query = query
+        self.root = root
+        self.max_files = max_files
+
+    def run(self):
+        try:
+            # We instantiate the extractor and pass our custom max files limit
+            extractor = FeatureFilterExtractor(self.query, max_files=self.max_files)
+            result = extractor.extract(self.root)
+            self.done.emit(self.query, result)
+        except Exception as e:
+            self.done.emit(self.query, f"[ERROR] Feature extraction failed:\n{traceback.format_exc()}")
+
+
 class MainWindow(QMainWindow):
     update_output_signal = Signal(str, str)
 
@@ -122,6 +156,9 @@ class MainWindow(QMainWindow):
         
         # Connect Worker Signal
         self.update_output_signal.connect(self.on_update_output)
+
+        # Thread reference storage to prevent garbage collection
+        self._feature_worker = None
 
         # Default Setup
         if not AppState.selected_language:
@@ -215,7 +252,14 @@ class MainWindow(QMainWindow):
         # --- BODY ---
         self.splitter = QSplitter(Qt.Horizontal)
         self.sidebar = PhaseSidebar()
-        self.workspace = Workspace(start_cb=self.start_analysis, open_project_cb=self.select_project)
+        
+        # Workspace is initialized with custom callback for feature filter system
+        self.workspace = Workspace(
+            start_cb=self.start_analysis, 
+            open_project_cb=self.select_project,
+            feature_extract_cb=self.run_feature_extract
+        )
+        
         self.splitter.addWidget(self.sidebar)
         self.splitter.addWidget(self.workspace)
         self.splitter.setSizes([260, 1040])
@@ -353,6 +397,37 @@ class MainWindow(QMainWindow):
 
         self.update_output_signal.emit(phase, out or "[INFO] No data generated.")
 
+    def run_feature_extract(self, query: str, max_files: int = None):
+        """
+        Extracts only files matching specific queries.
+        Supports custom relevant files constraint configuration.
+        """
+        if not AppState.tree_root:
+            self.status_bar.showMessage("❌ Pehle project select karo (📂 Select Project)")
+            return
+
+        # Safeguard: if max_files is omitted or None (e.g. from single-parameter signal), query the search bar directly!
+        if max_files is None:
+            try:
+                max_files = self.workspace.feature_bar.get_file_limit()
+            except AttributeError:
+                max_files = 40  # Safe robust default
+
+        self.status_bar.showMessage(f"🎯 Extracting: '{query}' (Max files: {max_files}) ...")
+        self.workspace.feature_bar.set_loading(True)
+
+        # Spin worker and pass custom limit choice
+        self._feature_worker = FeatureWorker(query, AppState.tree_root, max_files=max_files)
+        self._feature_worker.done.connect(self._on_feature_extract_done)
+        self._feature_worker.start()
+
+    @Slot(str, str)
+    def _on_feature_extract_done(self, query: str, content: str):
+        phase_name = f"🎯 Feature: {query}"
+        self.workspace.add_output(phase_name, content)
+        self.workspace.feature_bar.set_loading(False)
+        self.status_bar.showMessage(f"✅ Feature extract complete: '{query}'")
+
     @Slot(str, str)
     def on_update_output(self, phase, content):
         self.workspace.add_output(phase, content)
@@ -375,6 +450,7 @@ class MainWindow(QMainWindow):
     def export_zip(self):
         path, _ = QFileDialog.getSaveFileName(self, "Export ZIP", "context.zip", "ZIP (*.zip)")
         if path: OutputRegistry.export_zip(path)
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

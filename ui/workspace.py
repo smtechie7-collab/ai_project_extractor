@@ -7,15 +7,23 @@ from PySide6.QtGui import QGuiApplication, QFont
 from state.output_registry import OutputRegistry
 from ui.widgets import PrimaryButton, SecondaryButton
 from core.ai.prompt_templates import PROMPT_TEMPLATES
-# 🔥 FIXED IMPORT: Was 'from core.security.sanitizer', now pointing to the file explicitly
+# 🔥 FIXED IMPORT: Pointing to the file explicitly
 from core.security.sanitizer.SecuritySanitizer import SecuritySanitizer
 
 class Workspace(QWidget):
-    def __init__(self, start_cb, open_project_cb):
+    def __init__(self, start_cb, open_project_cb, feature_extract_cb=None):
         super().__init__()
         layout = QVBoxLayout(self)
         layout.setContentsMargins(15, 15, 15, 15)
         layout.setSpacing(10)
+        
+        # ── FEATURE SEARCH BAR ──
+        from ui.feature_search_bar import FeatureSearchBar
+        self.feature_bar = FeatureSearchBar()
+        if feature_extract_cb:
+            self.feature_bar.extract_requested.connect(feature_extract_cb)
+        layout.addWidget(self.feature_bar)
+        # ─────────────────────────
         
         # --- TOP BAR ---
         top = QHBoxLayout()
