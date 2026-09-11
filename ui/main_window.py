@@ -37,11 +37,10 @@ try:
     from core.ai.prompt_generator import generate_ai_prompt
     from core.git_scanner import GitScanner
     from core.extractors.feature_filter_extractor import FeatureFilterExtractor
+    from core.extractors.markdown_merger import (
+        scan_markdown_files, collect_markdown_from_tree, merge_markdown_files
+    )
     
-    # UI Helpers
-    from ui.sidebar import PhaseSidebar
-    from ui.workspace import Workspace
-    from ui.action_bar import ActionBar
     # UI Helpers
     from ui.sidebar import PhaseSidebar
     from ui.workspace import Workspace
@@ -288,13 +287,17 @@ class MainWindow(QMainWindow):
 
         header_layout.addStretch(1)
 
-        # Action Bar controls (Project, Git, Lang, Theme, Export)
+        # Action Bar controls (Project, Git, Lang, Theme, Export, Merge MD)
         self.action_bar = ActionBar(
             select_project_cb=self.select_project,
             export_selected_cb=self.export_selected,
             export_all_cb=self.export_all,
             export_zip_cb=self.export_zip,
-            git_toggle_cb=self.refresh_scan
+            git_toggle_cb=self.refresh_scan,
+            merge_files_cb=self.merge_selected_md_files,
+            merge_folder_cb=self.merge_folder_md_files,
+            merge_project_cb=self.merge_project_md_files,
+            export_markdown_cb=self.export_markdown
         )
         header_layout.addWidget(self.action_bar)
 
@@ -431,6 +434,14 @@ class MainWindow(QMainWindow):
                 out = ExecutiveSummaryV2.build(proj_name, metrics, violations, stats)
             elif phase == "AI Prompt":
                 out = generate_ai_prompt(proj_name, lang, OutputRegistry._outputs)
+            elif phase == "Full Markdown Source (.md)":
+                files = collect_markdown_from_tree(root) if root else []
+                if not files and AppState.project_root:
+                    files = scan_markdown_files(AppState.project_root, recursive=True)
+                if files:
+                    out = merge_markdown_files(files, base_root=AppState.project_root)
+                else:
+                    out = "# No Markdown Documentation Found\n\nNo .md or .markdown files were detected in this project."
 
             # ── PYTHON SPECIFIC PHASES ──
             elif "python" in lang:
@@ -541,6 +552,94 @@ class MainWindow(QMainWindow):
     def export_zip(self):
         path, _ = QFileDialog.getSaveFileName(self, "Export ZIP", "context.zip", "ZIP (*.zip)")
         if path: OutputRegistry.export_zip(path)
+
+    def export_markdown(self):
+        file_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Export Consolidated Markdown",
+            os.path.join(AppState.project_root or os.getcwd(), "project_full_source.md"),
+            "Markdown Files (*.md);;All Files (*.*)"
+        )
+        if not file_path:
+            return
+
+        curr_phase = self.workspace.phase_selector.currentText()
+        content = OutputRegistry.get(curr_phase)
+        if content and ("Markdown" in curr_phase or curr_phase.startswith("📚")):
+            OutputRegistry.export_single_markdown(file_path, content)
+            self.status_bar.showMessage(f"✅ Saved markdown view to {file_path}")
+        else:
+            folder = os.path.dirname(file_path)
+            OutputRegistry.export_markdown(folder)
+            self.status_bar.showMessage(f"✅ Exported full project markdown context to {folder}")
+
+    def merge_selected_md_files(self):
+        files, _ = QFileDialog.getOpenFileNames(
+            self,
+            "Select Markdown Files to Merge",
+            AppState.project_root or os.getcwd(),
+            "Markdown Files (*.md *.markdown);;All Files (*.*)"
+        )
+        if not files:
+            return
+
+        self.status_bar.showMessage(f"Processing {len(files)} markdown files...")
+        base_dir = AppState.project_root or os.path.dirname(files[0])
+        merged_text = merge_markdown_files(files, base_root=base_dir)
+
+        phase_name = f"📚 Full Markdown Source ({len(files)} files)"
+        self.workspace.add_output(phase_name, merged_text)
+        self.status_bar.showMessage(f"✅ Merged {len(files)} markdown files successfully! Ready to copy.")
+
+    def merge_folder_md_files(self):
+        folder = QFileDialog.getExistingDirectory(
+            self,
+            "Select Folder Containing Markdown Files",
+            AppState.project_root or os.getcwd()
+        )
+        if not folder:
+            return
+
+        self.status_bar.showMessage(f"Scanning folder for markdown files: {folder}...")
+        files = scan_markdown_files(folder, recursive=True)
+        if not files:
+            QMessageBox.information(self, "No Markdown Files", f"No .md or .markdown files found in:\n{folder}")
+            self.status_bar.showMessage("⚠️ No markdown files found.")
+            return
+
+        merged_text = merge_markdown_files(files, base_root=folder)
+        folder_name = os.path.basename(folder) or "Folder"
+        phase_name = f"📚 Full Markdown Source ({folder_name} - {len(files)} files)"
+        self.workspace.add_output(phase_name, merged_text)
+        self.status_bar.showMessage(f"✅ Merged {len(files)} markdown files from {folder_name}! Ready to copy.")
+
+    def merge_project_md_files(self):
+        if not AppState.project_root:
+            self.status_bar.showMessage("❌ Pehle project select karo (📂 Open Project)")
+            QMessageBox.warning(self, "No Project Open", "Please open a project first to merge its markdown files.")
+            return
+
+        self.status_bar.showMessage("Scanning project markdown files...")
+        files = []
+        if AppState.tree_root:
+            files = collect_markdown_from_tree(AppState.tree_root)
+        if not files and AppState.project_root:
+            files = scan_markdown_files(AppState.project_root, recursive=True)
+
+        if not files:
+            QMessageBox.information(
+                self,
+                "No Markdown Files Found",
+                f"No .md or .markdown files found in project:\n{AppState.project_root}"
+            )
+            self.status_bar.showMessage("⚠️ No markdown files found in project.")
+            return
+
+        proj_name = os.path.basename(AppState.project_root)
+        merged_text = merge_markdown_files(files, base_root=AppState.project_root)
+        phase_name = f"📚 Full Markdown Source ({proj_name} - {len(files)} files)"
+        self.workspace.add_output(phase_name, merged_text)
+        self.status_bar.showMessage(f"✅ Merged {len(files)} project markdown files! Ready to copy.")
 
 
 if __name__ == "__main__":
