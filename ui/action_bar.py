@@ -30,26 +30,9 @@ class ActionBar(QWidget):
 
         # ---------- Select Project Button ----------
         self.project_btn = QPushButton("📂  Open Project")
+        self.project_btn.setObjectName("actionProjectBtn")
         self.project_btn.setFixedHeight(34)
         self.project_btn.setCursor(QCursor(Qt.PointingHandCursor))
-        self.project_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #21262d;
-                color: #f0f6fc;
-                border: 1px solid #30363d;
-                border-radius: 6px;
-                padding: 0 14px;
-                font-weight: 600;
-                font-size: 12.5px;
-            }
-            QPushButton:hover {
-                background-color: #30363d;
-                border-color: #8b949e;
-            }
-            QPushButton:pressed {
-                background-color: #161b22;
-            }
-        """)
         self.project_btn.clicked.connect(select_project_cb)
 
         # ---------- Git Filter Checkbox ----------
@@ -81,29 +64,10 @@ class ActionBar(QWidget):
 
         # ---------- Export Button ----------
         self.export_btn = QPushButton("⬇  Export")
+        self.export_btn.setObjectName("actionExportBtn")
         self.export_btn.setFixedHeight(34)
         self.export_btn.setEnabled(False)
         self.export_btn.setCursor(QCursor(Qt.PointingHandCursor))
-        self.export_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #21262d;
-                color: #f0f6fc;
-                border: 1px solid #30363d;
-                border-radius: 6px;
-                padding: 0 14px;
-                font-weight: 600;
-                font-size: 12.5px;
-            }
-            QPushButton:hover {
-                background-color: #30363d;
-                border-color: #58a6ff;
-            }
-            QPushButton:disabled {
-                background-color: #161b22;
-                color: #484f58;
-                border-color: #21262d;
-            }
-        """)
 
         menu = QMenu(self)
         menu.addAction("📄 Export Active View (.txt)", export_selected_cb)
@@ -118,7 +82,6 @@ class ActionBar(QWidget):
         layout.addSpacing(6)
         
         lbl_lang = QLabel("Language:")
-        lbl_lang.setStyleSheet("color: #8b949e; font-size: 12px; font-weight: 500;")
         layout.addWidget(lbl_lang)
         layout.addWidget(self.language_combo)
         

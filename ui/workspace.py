@@ -26,26 +26,17 @@ class Workspace(QWidget):
         
         # ── 2. TOP TOOLBAR ──
         top_frame = QFrame()
-        top_frame.setStyleSheet("""
-            QFrame {
-                background-color: #161b22;
-                border: 1px solid #30363d;
-                border-radius: 8px;
-                padding: 2px;
-            }
-        """)
+        top_frame.setObjectName("workspaceTopFrame")
         top_layout = QHBoxLayout(top_frame)
         top_layout.setContentsMargins(12, 6, 12, 6)
         top_layout.setSpacing(10)
         
         lbl_view = QLabel("Phase:")
-        lbl_view.setStyleSheet("color: #8b949e; font-size: 12px; font-weight: 500;")
         self.phase_selector = QComboBox()
         self.phase_selector.setMinimumWidth(220)
         self.phase_selector.currentTextChanged.connect(self.load_output)
         
         lbl_task = QLabel("AI Task:")
-        lbl_task.setStyleSheet("color: #8b949e; font-size: 12px; font-weight: 500;")
         self.template_selector = QComboBox()
         self.template_selector.setMinimumWidth(180)
         for k in PROMPT_TEMPLATES.keys():
@@ -74,6 +65,7 @@ class Workspace(QWidget):
         
         # ── 3. CODE EDITOR / VIEWER ──
         self.output = QTextEdit()
+        self.output.setObjectName("codeEditor")
         self.output.setReadOnly(True)
         self.output.setLineWrapMode(QTextEdit.NoWrap)
         
@@ -87,19 +79,9 @@ class Workspace(QWidget):
         
         # ── 4. PROGRESS BAR ──
         self.progress = QProgressBar()
+        self.progress.setObjectName("analysisProgress")
         self.progress.setFixedHeight(4)
         self.progress.setTextVisible(False)
-        self.progress.setStyleSheet("""
-            QProgressBar {
-                background-color: #161b22;
-                border: none;
-                border-radius: 2px;
-            }
-            QProgressBar::chunk {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #1f6feb, stop:1 #238636);
-                border-radius: 2px;
-            }
-        """)
         layout.addWidget(self.progress)
         
         # ── 5. BOTTOM ACTION CONTROLS ──
@@ -107,9 +89,10 @@ class Workspace(QWidget):
         bottom.setContentsMargins(0, 4, 0, 0)
         
         self.meta_label = QLabel("No active project loaded")
-        self.meta_label.setStyleSheet("color: #8b949e; font-size: 12px;")
+        self.meta_label.setObjectName("metaLabel")
 
         self.start_btn = PrimaryButton("▶  Run Deep Analysis")
+        self.start_btn.setObjectName("startBtn")
         self.start_btn.setMinimumWidth(180)
         self.start_btn.clicked.connect(start_cb)
 

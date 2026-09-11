@@ -30,13 +30,7 @@ class FeatureSearchBar(QWidget):
         outer.setSpacing(0)
 
         frame = QFrame()
-        frame.setStyleSheet("""
-            QFrame {
-                background-color: #161b22;
-                border: 1px solid #30363d;
-                border-radius: 8px;
-            }
-        """)
+        frame.setObjectName("searchFrame")
 
         layout = QHBoxLayout(frame)
         layout.setContentsMargins(12, 6, 8, 6)
@@ -48,20 +42,8 @@ class FeatureSearchBar(QWidget):
 
         # Search input
         self.input_field = QLineEdit()
+        self.input_field.setObjectName("searchInput")
         self.input_field.setPlaceholderText("Quick filter & extract feature (e.g. billing, kyc, auth, sync, sales)...")
-        self.input_field.setStyleSheet("""
-            QLineEdit {
-                background-color: #0f141c;
-                color: #f0f6fc;
-                border: 1px solid #30363d;
-                border-radius: 6px;
-                padding: 6px 12px;
-                font-size: 12.5px;
-            }
-            QLineEdit:focus {
-                border-color: #58a6ff;
-            }
-        """)
         self.input_field.returnPressed.connect(self._on_search)
 
         # Autocomplete
@@ -72,6 +54,7 @@ class FeatureSearchBar(QWidget):
 
         # Limit Combo
         self.limit_combo = QComboBox()
+        self.limit_combo.setObjectName("limitCombo")
         self.limit_combo.setFixedHeight(32)
         self.limit_combo.addItem("Max 20 Files", 20)
         self.limit_combo.addItem("Max 40 Files", 40)
@@ -82,25 +65,9 @@ class FeatureSearchBar(QWidget):
 
         # Extract Button
         self.search_btn = QPushButton("🎯 Extract")
+        self.search_btn.setObjectName("searchBtn")
         self.search_btn.setFixedHeight(32)
         self.search_btn.setCursor(QCursor(Qt.PointingHandCursor))
-        self.search_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #1f6feb;
-                color: #ffffff;
-                border: 1px solid rgba(255, 255, 255, 0.1);
-                border-radius: 6px;
-                padding: 0 16px;
-                font-size: 12px;
-                font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #388bfd;
-            }
-            QPushButton:pressed {
-                background-color: #1158c7;
-            }
-        """)
         self.search_btn.clicked.connect(self._on_search)
 
         # Assemble

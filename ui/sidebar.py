@@ -19,30 +19,17 @@ class PhaseSidebar(QWidget):
 
         # Header
         header = QWidget()
+        header.setObjectName("sidebarHeader")
         header.setFixedHeight(46)
-        header.setStyleSheet("""
-            QWidget {
-                background-color: #161b22;
-                border-bottom: 1px solid #30363d;
-                border-right: 1px solid #30363d;
-            }
-        """)
+        
         h_layout = QHBoxLayout(header)
         h_layout.setContentsMargins(16, 0, 16, 0)
 
         title = QLabel("ANALYSIS PHASES")
-        title.setStyleSheet("font-size: 11px; font-weight: 700; color: #8b949e; letter-spacing: 0.8px; border: none;")
+        title.setObjectName("sidebarTitle")
 
         self.count_badge = QLabel("0")
-        self.count_badge.setStyleSheet("""
-            background-color: #21262d;
-            color: #8b949e;
-            border-radius: 10px;
-            padding: 2px 8px;
-            font-size: 11px;
-            font-weight: 600;
-            border: 1px solid #30363d;
-        """)
+        self.count_badge.setObjectName("sidebarBadge")
 
         h_layout.addWidget(title)
         h_layout.addStretch()
@@ -51,38 +38,9 @@ class PhaseSidebar(QWidget):
 
         # List Widget
         self.list_widget = QListWidget()
+        self.list_widget.setObjectName("sidebarList")
         self.list_widget.setFont(QFont("Segoe UI", 10))
         self.list_widget.setFocusPolicy(Qt.NoFocus)
-        self.list_widget.setStyleSheet("""
-            QListWidget {
-                background-color: #0d1117;
-                color: #c9d1d9;
-                border: none;
-                border-right: 1px solid #30363d;
-                padding: 6px 8px;
-                outline: none;
-            }
-            QListWidget::item {
-                height: 36px;
-                padding-left: 10px;
-                padding-right: 10px;
-                border-radius: 6px;
-                margin-bottom: 3px;
-                border: 1px solid transparent;
-            }
-            QListWidget::item:hover {
-                background-color: #161b22;
-                color: #f0f6fc;
-                border: 1px solid #30363d;
-            }
-            QListWidget::item:selected {
-                background-color: #1f242c;
-                color: #58a6ff;
-                font-weight: 600;
-                border-left: 3px solid #2f81f7;
-                border-radius: 4px;
-            }
-        """)
         self.list_widget.itemClicked.connect(self._on_item_clicked)
         layout.addWidget(self.list_widget, 1)
 

@@ -93,25 +93,17 @@ class AboutDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("About AI Context Extractor Pro")
         self.setFixedSize(500, 380)
-        self.setStyleSheet("""
-            QDialog {
-                background-color: #161b22;
-                color: #f0f6fc;
-                border: 1px solid #30363d;
-                border-radius: 12px;
-            }
-        """)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(24, 24, 24, 24)
         layout.setSpacing(12)
 
         title = QLabel("⚡ AI CONTEXT EXTRACTOR PRO")
-        title.setStyleSheet("font-size: 18px; font-weight: 800; color: #58a6ff;")
+        title.setObjectName("aboutTitle")
         title.setAlignment(Qt.AlignCenter)
         layout.addWidget(title)
 
         v_label = QLabel("Production Grade • Multi-Language Enterprise Suite")
-        v_label.setStyleSheet("color: #8b949e; font-size: 12px;")
+        v_label.setObjectName("dialogSubtitle")
         v_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(v_label)
 
@@ -122,8 +114,8 @@ class AboutDialog(QDialog):
             "• JavaScript / TypeScript: Web Portals, PWA, Firestore Schema, DOM Event Map, Hardware POS.\n"
             "• Python, Java, C++ & Universal Enterprise Systems."
         )
+        desc.setObjectName("aboutDesc")
         desc.setWordWrap(True)
-        desc.setStyleSheet("font-size: 13px; line-height: 1.6; color: #c9d1d9; padding: 10px 0;")
         layout.addWidget(desc)
 
         layout.addStretch()
@@ -138,32 +130,24 @@ class SponsorDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("Support & Sponsor Project")
         self.setFixedSize(460, 480)
-        self.setStyleSheet("""
-            QDialog {
-                background-color: #161b22;
-                color: #f0f6fc;
-                border: 1px solid #30363d;
-                border-radius: 12px;
-            }
-        """)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(24, 20, 24, 20)
         layout.setSpacing(12)
 
         title = QLabel("☕ Support AI Project Extractor")
-        title.setStyleSheet("font-size: 18px; font-weight: 800; color: #f0883e;")
+        title.setObjectName("sponsorDialogTitle")
         title.setAlignment(Qt.AlignCenter)
         layout.addWidget(title)
 
         desc = QLabel("Help keep this project open, production-grade, and actively maintained.")
-        desc.setStyleSheet("color: #8b949e; font-size: 12px;")
+        desc.setObjectName("dialogSubtitle")
         desc.setAlignment(Qt.AlignCenter)
         layout.addWidget(desc)
 
         # Center QR container
         qr_frame = QFrame()
+        qr_frame.setObjectName("qrFrame")
         qr_frame.setFixedSize(140, 140)
-        qr_frame.setStyleSheet("background-color: #ffffff; border-radius: 8px; border: 2px solid #30363d;")
         qr_layout = QVBoxLayout(qr_frame)
         qr_layout.setContentsMargins(4, 4, 4, 4)
 
@@ -265,6 +249,7 @@ class MainWindow(QMainWindow):
 
     def init_ui(self):
         central = QWidget()
+        central.setObjectName("centralWidget")
         self.main_layout = QVBoxLayout(central)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
         self.main_layout.setSpacing(0)
@@ -272,13 +257,8 @@ class MainWindow(QMainWindow):
 
         # --- SLEEK PRODUCTION NAVIGATION BAR (62px) ---
         self.header_frame = QFrame()
+        self.header_frame.setObjectName("headerFrame")
         self.header_frame.setFixedHeight(62)
-        self.header_frame.setStyleSheet("""
-            QFrame {
-                background-color: #161b22;
-                border-bottom: 1px solid #30363d;
-            }
-        """)
         header_layout = QHBoxLayout(self.header_frame)
         header_layout.setContentsMargins(18, 0, 18, 0)
         header_layout.setSpacing(14)
@@ -288,30 +268,20 @@ class MainWindow(QMainWindow):
         brand_box.setSpacing(8)
 
         logo_lbl = QLabel("⚡")
-        logo_lbl.setStyleSheet("font-size: 20px; border: none; background: transparent;")
+        logo_lbl.setObjectName("logoIcon")
 
         title_lbl = QLabel("AI Context Extractor")
-        title_lbl.setStyleSheet("font-size: 15px; font-weight: 800; color: #f0f6fc; letter-spacing: -0.2px; border: none; background: transparent;")
+        title_lbl.setObjectName("mainAppTitle")
 
         pro_pill = QLabel("PRO")
-        pro_pill.setStyleSheet("background-color: #1f6feb; color: #ffffff; font-size: 10px; font-weight: 800; border-radius: 4px; padding: 2px 6px; border: none;")
+        pro_pill.setObjectName("proBadge")
 
         brand_box.addWidget(logo_lbl)
         brand_box.addWidget(title_lbl)
         brand_box.addWidget(pro_pill)
 
         self.proj_title = QLabel("⚪ No Project Open")
-        self.proj_title.setStyleSheet("""
-            QLabel {
-                background-color: #0f141c;
-                color: #8b949e;
-                border: 1px solid #30363d;
-                border-radius: 6px;
-                padding: 4px 10px;
-                font-size: 12px;
-                font-weight: 500;
-            }
-        """)
+        self.proj_title.setObjectName("projectTitle")
         brand_box.addSpacing(8)
         brand_box.addWidget(self.proj_title)
         header_layout.addLayout(brand_box)
@@ -330,24 +300,9 @@ class MainWindow(QMainWindow):
 
         # Sponsor Button
         self.btn_sponsor = QPushButton("☕ Sponsor")
+        self.btn_sponsor.setObjectName("sponsorBtn")
         self.btn_sponsor.setFixedHeight(34)
         self.btn_sponsor.setCursor(QCursor(Qt.PointingHandCursor))
-        self.btn_sponsor.setStyleSheet("""
-            QPushButton {
-                background-color: #21262d;
-                color: #f0883e;
-                border: 1px solid #30363d;
-                border-radius: 6px;
-                font-weight: 600;
-                font-size: 12px;
-                padding: 0 12px;
-            }
-            QPushButton:hover {
-                background-color: #30363d;
-                border-color: #f0883e;
-                color: #ffa657;
-            }
-        """)
         self.btn_sponsor.clicked.connect(self.show_sponsor)
         header_layout.addWidget(self.btn_sponsor)
 
@@ -387,17 +342,6 @@ class MainWindow(QMainWindow):
         AppState.project_root = path
         proj_name = os.path.basename(path)
         self.proj_title.setText(f"📁  {proj_name}")
-        self.proj_title.setStyleSheet("""
-            QLabel {
-                background-color: #0f141c;
-                color: #58a6ff;
-                border: 1px solid #1f6feb;
-                border-radius: 6px;
-                padding: 4px 10px;
-                font-size: 12px;
-                font-weight: 600;
-            }
-        """)
         self.action_bar.check_git_status(path)
         self.perform_scan(path, self.action_bar.git_check.isChecked())
         self.workspace.project_loaded()
