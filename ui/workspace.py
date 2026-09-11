@@ -1,106 +1,130 @@
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, QTextEdit, QHBoxLayout, 
-    QComboBox, QProgressBar, QCheckBox
+    QComboBox, QProgressBar, QCheckBox, QFrame
 )
 from PySide6.QtCore import QTimer, Qt
 from PySide6.QtGui import QGuiApplication, QFont
 from state.output_registry import OutputRegistry
 from ui.widgets import PrimaryButton, SecondaryButton
 from core.ai.prompt_templates import PROMPT_TEMPLATES
-# 🔥 FIXED IMPORT: Pointing to the file explicitly
 from core.security.sanitizer.SecuritySanitizer import SecuritySanitizer
+
 
 class Workspace(QWidget):
     def __init__(self, start_cb, open_project_cb, feature_extract_cb=None):
         super().__init__()
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(15, 15, 15, 15)
+        layout.setContentsMargins(16, 14, 16, 14)
         layout.setSpacing(10)
         
-        # ── FEATURE SEARCH BAR ──
+        # ── 1. FEATURE SEARCH BAR ──
         from ui.feature_search_bar import FeatureSearchBar
         self.feature_bar = FeatureSearchBar()
         if feature_extract_cb:
             self.feature_bar.extract_requested.connect(feature_extract_cb)
         layout.addWidget(self.feature_bar)
-        # ─────────────────────────
         
-        # --- TOP BAR ---
-        top = QHBoxLayout()
+        # ── 2. TOP TOOLBAR ──
+        top_frame = QFrame()
+        top_frame.setStyleSheet("""
+            QFrame {
+                background-color: #161b22;
+                border: 1px solid #30363d;
+                border-radius: 8px;
+                padding: 2px;
+            }
+        """)
+        top_layout = QHBoxLayout(top_frame)
+        top_layout.setContentsMargins(12, 6, 12, 6)
+        top_layout.setSpacing(10)
         
+        lbl_view = QLabel("Phase:")
+        lbl_view.setStyleSheet("color: #8b949e; font-size: 12px; font-weight: 500;")
         self.phase_selector = QComboBox()
-        self.phase_selector.setMinimumWidth(200)
+        self.phase_selector.setMinimumWidth(220)
         self.phase_selector.currentTextChanged.connect(self.load_output)
         
+        lbl_task = QLabel("AI Task:")
+        lbl_task.setStyleSheet("color: #8b949e; font-size: 12px; font-weight: 500;")
         self.template_selector = QComboBox()
         self.template_selector.setMinimumWidth(180)
         for k in PROMPT_TEMPLATES.keys():
             self.template_selector.addItem(k)
         
-        self.safe_mode_cb = QCheckBox("🛡️ Safe Mode")
+        self.safe_mode_cb = QCheckBox("🛡️ Safe Sanitizer")
         self.safe_mode_cb.setChecked(True)
-        self.safe_mode_cb.setToolTip("Hide API Keys & Passwords")
+        self.safe_mode_cb.setToolTip("Mask API keys, secrets, and private tokens before copy")
 
-        # UX Feature: Word Wrap Toggle
         self.wrap_cb = QCheckBox("Wrap Text")
         self.wrap_cb.setChecked(False)
         self.wrap_cb.stateChanged.connect(self.toggle_wrap)
-        
-        self.copy_btn = SecondaryButton("📋 Copy w/ Prompt")
+
+        self.copy_btn = SecondaryButton("📋 Copy with Prompt")
         self.copy_btn.clicked.connect(self.copy_output)
+
+        top_layout.addWidget(lbl_view)
+        top_layout.addWidget(self.phase_selector, 1)
+        top_layout.addWidget(lbl_task)
+        top_layout.addWidget(self.template_selector, 1)
+        top_layout.addWidget(self.safe_mode_cb)
+        top_layout.addWidget(self.wrap_cb)
+        top_layout.addWidget(self.copy_btn)
+
+        layout.addWidget(top_frame)
         
-        top.addWidget(QLabel("Output:"))
-        top.addWidget(self.phase_selector, 1)
-        top.addWidget(QLabel("Task:"))
-        top.addWidget(self.template_selector, 1)
-        top.addWidget(self.safe_mode_cb)
-        top.addWidget(self.wrap_cb)
-        top.addWidget(self.copy_btn)
-        
-        # --- EDITOR ---
+        # ── 3. CODE EDITOR / VIEWER ──
         self.output = QTextEdit()
         self.output.setReadOnly(True)
         self.output.setLineWrapMode(QTextEdit.NoWrap)
         
-        # Set Modern Font
-        font = QFont("Consolas", 11)
+        font = QFont("Cascadia Code", 10)
+        if not font.exactMatch():
+            font = QFont("Consolas", 10)
         font.setStyleHint(QFont.Monospace)
         self.output.setFont(font)
         
-        self.output.setStyleSheet("""
-            QTextEdit {
-                background-color: #1e1e1e;
-                color: #dcdcaa;
-                border: 1px solid #3e3e42;
-                border-radius: 4px;
-                padding: 8px;
-                selection-background-color: #264f78;
+        layout.addWidget(self.output, 1)
+        
+        # ── 4. PROGRESS BAR ──
+        self.progress = QProgressBar()
+        self.progress.setFixedHeight(4)
+        self.progress.setTextVisible(False)
+        self.progress.setStyleSheet("""
+            QProgressBar {
+                background-color: #161b22;
+                border: none;
+                border-radius: 2px;
+            }
+            QProgressBar::chunk {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #1f6feb, stop:1 #238636);
+                border-radius: 2px;
             }
         """)
+        layout.addWidget(self.progress)
         
-        self.progress = QProgressBar()
-        self.progress.setStyleSheet("QProgressBar { height: 4px; border: none; background: #2d2d30; } QProgressBar::chunk { background: #007acc; }")
-        
-        # --- BOTTOM ACTIONS ---
+        # ── 5. BOTTOM ACTION CONTROLS ──
         bottom = QHBoxLayout()
-        self.open_btn = SecondaryButton("📂 Open Project")
-        self.open_btn.clicked.connect(open_project_cb)
+        bottom.setContentsMargins(0, 4, 0, 0)
         
-        self.start_btn = PrimaryButton("▶ Run Analysis")
+        self.meta_label = QLabel("No active project loaded")
+        self.meta_label.setStyleSheet("color: #8b949e; font-size: 12px;")
+
+        self.start_btn = PrimaryButton("▶  Run Deep Analysis")
+        self.start_btn.setMinimumWidth(180)
         self.start_btn.clicked.connect(start_cb)
-        self.start_btn.setMinimumWidth(150)
-        
-        bottom.addWidget(self.open_btn)
+
+        bottom.addWidget(self.meta_label)
         bottom.addStretch()
         bottom.addWidget(self.start_btn)
         
-        layout.addLayout(top)
-        layout.addWidget(self.output, 1)
-        layout.addWidget(self.progress)
         layout.addLayout(bottom)
-        
+
     def project_loaded(self):
         self.start_btn.setEnabled(True)
+
+    def update_progress(self, percent: int, phase_name: str):
+        self.progress.setValue(percent)
+        self.meta_label.setText(f"Processing ({percent}%): {phase_name}...")
 
     def add_output(self, phase, content):
         OutputRegistry.add(phase, content)
@@ -109,7 +133,11 @@ class Workspace(QWidget):
         self.phase_selector.setCurrentText(phase)
 
     def load_output(self, phase):
-        self.output.setPlainText(OutputRegistry.get(phase))
+        txt = OutputRegistry.get(phase) or ""
+        self.output.setPlainText(txt)
+        lines = txt.count("\n") + 1 if txt else 0
+        size_kb = len(txt.encode('utf-8')) / 1024
+        self.meta_label.setText(f"Phase: {phase}  |  {lines:,} lines  |  {size_kb:.1f} KB")
 
     def toggle_wrap(self, state):
         if self.wrap_cb.isChecked():
@@ -119,7 +147,8 @@ class Workspace(QWidget):
 
     def copy_output(self):
         txt = self.output.toPlainText()
-        if not txt: return
+        if not txt:
+            return
 
         if self.safe_mode_cb.isChecked():
             txt = SecuritySanitizer.sanitize(txt)
@@ -130,19 +159,23 @@ class Workspace(QWidget):
         QGuiApplication.clipboard().setText(final_text)
         
         original_text = self.copy_btn.text()
-        self.copy_btn.setText("✅ Copied!")
-        self.copy_btn.setStyleSheet("background-color: #2da44e; color: white; border: none; border-radius: 4px;")
+        self.copy_btn.setText("✔ Copied!")
+        self.copy_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #238636;
+                color: #ffffff;
+                border: 1px solid #2ea043;
+                border-radius: 6px;
+                font-size: 12.5px;
+                font-weight: 600;
+                padding: 0 14px;
+            }
+        """)
         self.copy_btn.setEnabled(False)
         
-        QTimer.singleShot(1500, lambda: self._reset_copy_btn(original_text))
+        QTimer.singleShot(1600, lambda: self._reset_copy_btn(original_text))
 
     def _reset_copy_btn(self, text):
         self.copy_btn.setText(text)
+        self.copy_btn.setStyleSheet("")
         self.copy_btn.setEnabled(True)
-        self.copy_btn.setStyleSheet("background-color: #3e3e42; color: #e0e0e0; border: 1px solid #505050; border-radius: 4px;")
-
-    def update_progress(self, v, p):
-        self.progress.setValue(v)
-
-    def current_phase(self):
-        return self.phase_selector.currentText()

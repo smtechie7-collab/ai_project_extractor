@@ -1,96 +1,101 @@
 from PySide6.QtWidgets import QPushButton, QWidget, QVBoxLayout, QLabel
-from PySide6.QtCore import Qt, QSize
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QCursor
 
-# ================= COLORS =================
-ACCENT_COLOR = "#007acc"
-ACCENT_HOVER = "#0098ff"
-BG_DARK = "#252526"
-TEXT_COLOR = "#ffffff"
 
 class PrimaryButton(QPushButton):
     """
-    Main Action Button (e.g., Start Analysis)
-    Blue background, white text, bold.
+    High-visibility primary action button (e.g., Run Analysis).
+    Features smooth subtle elevation, modern green/indigo accent, and tactile feedback.
     """
     def __init__(self, text, parent=None):
         super().__init__(text, parent)
         self.setCursor(QCursor(Qt.PointingHandCursor))
-        self.setFixedHeight(36)
-        self.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {ACCENT_COLOR};
-                color: white;
-                border: none;
-                border-radius: 4px;
-                font-weight: bold;
+        self.setFixedHeight(38)
+        self.setStyleSheet("""
+            QPushButton {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #1f6feb, stop:1 #238636);
+                color: #ffffff;
+                border: 1px solid rgba(255, 255, 255, 0.15);
+                border-radius: 6px;
+                font-weight: 600;
                 font-size: 13px;
-                padding: 0 16px;
-            }}
-            QPushButton:hover {{
-                background-color: {ACCENT_HOVER};
-            }}
-            QPushButton:pressed {{
-                background-color: #005a9e;
-            }}
-            QPushButton:disabled {{
-                background-color: #3e3e42;
-                color: #888888;
-            }}
+                padding: 0 18px;
+            }
+            QPushButton:hover {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #388bfd, stop:1 #2ea043);
+                border: 1px solid rgba(255, 255, 255, 0.3);
+            }
+            QPushButton:pressed {
+                background: #196127;
+                padding-top: 1px;
+            }
+            QPushButton:disabled {
+                background: #21262d;
+                color: #484f58;
+                border: 1px solid #30363d;
+            }
         """)
+
 
 class SecondaryButton(QPushButton):
     """
-    Secondary Actions (e.g., Copy, Export)
-    Dark background, light border.
+    Subtle action button for secondary controls (Copy, Open Project, Clear).
     """
     def __init__(self, text, parent=None):
         super().__init__(text, parent)
         self.setCursor(QCursor(Qt.PointingHandCursor))
-        self.setFixedHeight(32)
+        self.setFixedHeight(34)
         self.setStyleSheet("""
             QPushButton {
-                background-color: #3e3e42;
-                color: #e0e0e0;
-                border: 1px solid #505050;
-                border-radius: 4px;
-                font-size: 12px;
-                padding: 0 12px;
+                background-color: #21262d;
+                color: #f0f6fc;
+                border: 1px solid #30363d;
+                border-radius: 6px;
+                font-size: 12.5px;
+                font-weight: 500;
+                padding: 0 14px;
             }
             QPushButton:hover {
-                background-color: #505050;
+                background-color: #30363d;
+                border-color: #8b949e;
+                color: #ffffff;
             }
             QPushButton:pressed {
-                background-color: #2d2d30;
+                background-color: #161b22;
+                padding-top: 1px;
+            }
+            QPushButton:disabled {
+                background-color: #161b22;
+                color: #484f58;
+                border-color: #21262d;
             }
         """)
 
+
 class StatCard(QWidget):
     """
-    A simple card to display key-value stats (e.g., Lines: 5000)
+    Refined stat card displaying key metrics in modern card layout.
     """
     def __init__(self, label, value, parent=None):
         super().__init__(parent)
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(10, 8, 10, 8)
-        layout.setSpacing(2)
+        layout.setContentsMargins(12, 10, 12, 10)
+        layout.setSpacing(4)
 
         self.setStyleSheet("""
             QWidget {
-                background-color: #2d2d30;
-                border: 1px solid #3e3e42;
+                background-color: #161b22;
+                border: 1px solid #30363d;
                 border-radius: 6px;
             }
         """)
 
-        lbl_title = QLabel(label)
-        lbl_title.setStyleSheet("color: #aaaaaa; font-size: 11px; border:none;")
+        lbl_title = QLabel(label.upper())
+        lbl_title.setStyleSheet("color: #8b949e; font-size: 10px; font-weight: 600; border: none; letter-spacing: 0.5px;")
         
         self.lbl_value = QLabel(value)
-        self.lbl_value.setStyleSheet("color: #ffffff; font-size: 14px; font-weight: bold; border:none;")
+        self.lbl_value.setStyleSheet("color: #f0f6fc; font-size: 15px; font-weight: 700; border: none;")
 
         layout.addWidget(lbl_title)
         layout.addWidget(self.lbl_value)
-
-    def set_value(self, value):
-        self.lbl_value.setText(str(value))

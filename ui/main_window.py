@@ -19,7 +19,7 @@ try:
         QHBoxLayout, QFrame, QProgressBar, QDialog, QPushButton
     )
     from PySide6.QtCore import Qt, QSettings, Signal, Slot, QSize, QTimer, QUrl, QThread
-    from PySide6.QtGui import QDragEnterEvent, QDropEvent, QIcon, QFont, QColor, QPalette, QPixmap, QDesktopServices
+    from PySide6.QtGui import QDragEnterEvent, QDropEvent, QIcon, QFont, QColor, QPalette, QPixmap, QDesktopServices, QCursor
 except ModuleNotFoundError:
     print("PySide6 missing. Run: pip install PySide6")
     sys.exit(1)
@@ -47,6 +47,7 @@ try:
     from ui.workspace import Workspace
     from ui.action_bar import ActionBar
     from ui.worker import AnalysisWorker
+    from ui.theme_manager import ThemeManager
     from state.app_state import AppState
     from state.output_registry import OutputRegistry
 
@@ -91,33 +92,113 @@ class AboutDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("About AI Context Extractor Pro")
-        self.setFixedSize(550, 480)
-        self.setStyleSheet("background-color: #121212; color: #e0e0e0; border-radius: 15px;")
-        
+        self.setFixedSize(500, 380)
+        self.setStyleSheet("""
+            QDialog {
+                background-color: #161b22;
+                color: #f0f6fc;
+                border: 1px solid #30363d;
+                border-radius: 12px;
+            }
+        """)
         layout = QVBoxLayout(self)
-        title = QLabel("🚀 AI CONTEXT EXTRACTOR PRO")
-        title.setStyleSheet("font-size: 24px; font-weight: 900; color: #4fc3f7; margin-top: 10px;")
-        layout.addWidget(title, alignment=Qt.AlignCenter)
-        
-        v_label = QLabel("Version 4.2.1 (Refined Components Audit)")
-        v_label.setStyleSheet("color: #888; font-size: 12px;")
-        layout.addWidget(v_label, alignment=Qt.AlignCenter)
+        layout.setContentsMargins(24, 24, 24, 24)
+        layout.setSpacing(12)
+
+        title = QLabel("⚡ AI CONTEXT EXTRACTOR PRO")
+        title.setStyleSheet("font-size: 18px; font-weight: 800; color: #58a6ff;")
+        title.setAlignment(Qt.AlignCenter)
+        layout.addWidget(title)
+
+        v_label = QLabel("Production Grade • Multi-Language Enterprise Suite")
+        v_label.setStyleSheet("color: #8b949e; font-size: 12px;")
+        v_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(v_label)
 
         desc = QLabel(
-            "This software scans Python, Kotlin, and JS projects to generate AI-ready context.\n\n"
-            "Key Features:\n"
-            "• Detailed Blueprint: ViewModels, UIStates, Repos, and Workers.\n"
-            "• Risk Heatmap & Clean Architecture Violations.\n"
-            "• Optimized for GPT-4/Claude Architectural Analysis."
+            "Architectural intelligence and deep context extractor for large-scale codebases.\n\n"
+            "Supported Ecosystems:\n"
+            "• Kotlin & Android: Clean Architecture, Jetpack Compose, Hilt DI, Outbox Sync, Room DB.\n"
+            "• JavaScript / TypeScript: Web Portals, PWA, Firestore Schema, DOM Event Map, Hardware POS.\n"
+            "• Python, Java, C++ & Universal Enterprise Systems."
         )
         desc.setWordWrap(True)
-        desc.setStyleSheet("font-size: 14px; line-height: 22px; margin: 15px; color: #bbb;")
+        desc.setStyleSheet("font-size: 13px; line-height: 1.6; color: #c9d1d9; padding: 10px 0;")
         layout.addWidget(desc)
-        
-        close_btn = QLabel('<a href="#" style="color:#4fc3f7; text-decoration:none;">[ CLOSE ]</a>')
-        close_btn.setCursor(Qt.PointingHandCursor)
-        close_btn.mousePressEvent = lambda e: self.close()
-        layout.addWidget(close_btn, alignment=Qt.AlignCenter)
+
+        layout.addStretch()
+        close_btn = QPushButton("Close")
+        close_btn.setFixedHeight(32)
+        close_btn.clicked.connect(self.close)
+        layout.addWidget(close_btn)
+
+
+class SponsorDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Support & Sponsor Project")
+        self.setFixedSize(460, 480)
+        self.setStyleSheet("""
+            QDialog {
+                background-color: #161b22;
+                color: #f0f6fc;
+                border: 1px solid #30363d;
+                border-radius: 12px;
+            }
+        """)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(24, 20, 24, 20)
+        layout.setSpacing(12)
+
+        title = QLabel("☕ Support AI Project Extractor")
+        title.setStyleSheet("font-size: 18px; font-weight: 800; color: #f0883e;")
+        title.setAlignment(Qt.AlignCenter)
+        layout.addWidget(title)
+
+        desc = QLabel("Help keep this project open, production-grade, and actively maintained.")
+        desc.setStyleSheet("color: #8b949e; font-size: 12px;")
+        desc.setAlignment(Qt.AlignCenter)
+        layout.addWidget(desc)
+
+        # Center QR container
+        qr_frame = QFrame()
+        qr_frame.setFixedSize(140, 140)
+        qr_frame.setStyleSheet("background-color: #ffffff; border-radius: 8px; border: 2px solid #30363d;")
+        qr_layout = QVBoxLayout(qr_frame)
+        qr_layout.setContentsMargins(4, 4, 4, 4)
+
+        qr_label = QLabel()
+        qr_label.setScaledContents(True)
+        try:
+            img_data = base64.b64decode(QR_DATA_BASE64)
+            pix = QPixmap()
+            pix.loadFromData(img_data)
+            qr_label.setPixmap(pix)
+        except Exception:
+            qr_label.setText("QR")
+        qr_layout.addWidget(qr_label)
+        layout.addWidget(qr_frame, alignment=Qt.AlignCenter)
+
+        # PayPal Link Button
+        btn_paypal = QLabel('<a href="https://paypal.me/raza489991" style="background-color: #1f6feb; color: #ffffff; padding: 8px 18px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 13px;">❤️ Sponsor via PayPal</a>')
+        btn_paypal.setOpenExternalLinks(True)
+        layout.addWidget(btn_paypal, alignment=Qt.AlignCenter)
+
+        # Contact Info
+        contact_box = QVBoxLayout()
+        contact_box.setSpacing(4)
+        c1 = QLabel('<a href="mailto:hasnainrazamemon9@gmail.com" style="color:#58a6ff; text-decoration:none; font-size:12px;">📧 hasnainrazamemon9@gmail.com</a>')
+        c1.setOpenExternalLinks(True)
+        c2 = QLabel('<span style="color:#8b949e; font-size:12px;">📞 +91 99258 11505</span>')
+        contact_box.addWidget(c1, alignment=Qt.AlignCenter)
+        contact_box.addWidget(c2, alignment=Qt.AlignCenter)
+        layout.addLayout(contact_box)
+
+        layout.addSpacing(6)
+        close_btn = QPushButton("Close")
+        close_btn.setFixedHeight(32)
+        close_btn.clicked.connect(self.close)
+        layout.addWidget(close_btn)
 
 
 class FeatureWorker(QThread):
@@ -135,7 +216,6 @@ class FeatureWorker(QThread):
 
     def run(self):
         try:
-            # We instantiate the extractor and pass our custom max files limit
             extractor = FeatureFilterExtractor(self.query, max_files=self.max_files)
             result = extractor.extract(self.root)
             self.done.emit(self.query, result)
@@ -149,7 +229,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("🚀 AI Context Extractor Pro")
-        self.setMinimumSize(1300, 900)
+        self.setMinimumSize(1320, 900)
         self.setAcceptDrops(True)
         
         self.init_ui()
@@ -159,36 +239,29 @@ class MainWindow(QMainWindow):
         # Connect Actions
         self.action_bar.language_combo.currentIndexChanged.connect(self.on_language_changed_trigger)
         self.sidebar.phase_clicked.connect(self.on_sidebar_phase_clicked)
-        
-        # Connect Worker Signal
         self.update_output_signal.connect(self.on_update_output)
 
-        # Thread reference storage to prevent garbage collection
         self._feature_worker = None
 
-        # Default Setup
         if not AppState.selected_language:
             AppState.selected_language = "kotlin"
 
         self.update_phases_list()
 
-
     def setup_styles(self):
-        self.setStyleSheet("""
-            QMainWindow { background-color: #0c0c0c; }
-            QStatusBar { background: #007acc; color: white; font-weight: bold; }
-            QSplitter::handle { background-color: #2d2d2d; height: 1px; }
-            QLabel { color: #dcdcdc; }
-        """)
+        ThemeManager.load()
 
     def create_menus(self):
         menubar = self.menuBar()
-        menubar.setStyleSheet("background-color: #1a1a1a; color: #dcdcdc; border-bottom: 1px solid #333;")
         help_menu = menubar.addMenu("Help")
         help_menu.addAction("About Software", self.show_about)
+        help_menu.addAction("Support Developer", self.show_sponsor)
 
     def show_about(self):
         AboutDialog(self).exec()
+
+    def show_sponsor(self):
+        SponsorDialog(self).exec()
 
     def init_ui(self):
         central = QWidget()
@@ -197,19 +270,55 @@ class MainWindow(QMainWindow):
         self.main_layout.setSpacing(0)
         self.setCentralWidget(central)
 
-        # --- HEADER ---
+        # --- SLEEK PRODUCTION NAVIGATION BAR (62px) ---
         self.header_frame = QFrame()
-        self.header_frame.setFixedHeight(170)
-        self.header_frame.setStyleSheet("background-color: #161616; border-bottom: 1px solid #2d2d2d;")
-        
+        self.header_frame.setFixedHeight(62)
+        self.header_frame.setStyleSheet("""
+            QFrame {
+                background-color: #161b22;
+                border-bottom: 1px solid #30363d;
+            }
+        """)
         header_layout = QHBoxLayout(self.header_frame)
-        header_layout.setContentsMargins(25, 10, 25, 10)
+        header_layout.setContentsMargins(18, 0, 18, 0)
+        header_layout.setSpacing(14)
 
-        # Left Box
-        left_box = QVBoxLayout()
-        self.proj_title = QLabel("AI CONTEXT EXTRACTOR PRO")
-        self.proj_title.setStyleSheet("font-size: 24px; font-weight: 900; color: #4fc3f7;")
-        
+        # Brand / Title
+        brand_box = QHBoxLayout()
+        brand_box.setSpacing(8)
+
+        logo_lbl = QLabel("⚡")
+        logo_lbl.setStyleSheet("font-size: 20px; border: none; background: transparent;")
+
+        title_lbl = QLabel("AI Context Extractor")
+        title_lbl.setStyleSheet("font-size: 15px; font-weight: 800; color: #f0f6fc; letter-spacing: -0.2px; border: none; background: transparent;")
+
+        pro_pill = QLabel("PRO")
+        pro_pill.setStyleSheet("background-color: #1f6feb; color: #ffffff; font-size: 10px; font-weight: 800; border-radius: 4px; padding: 2px 6px; border: none;")
+
+        brand_box.addWidget(logo_lbl)
+        brand_box.addWidget(title_lbl)
+        brand_box.addWidget(pro_pill)
+
+        self.proj_title = QLabel("⚪ No Project Open")
+        self.proj_title.setStyleSheet("""
+            QLabel {
+                background-color: #0f141c;
+                color: #8b949e;
+                border: 1px solid #30363d;
+                border-radius: 6px;
+                padding: 4px 10px;
+                font-size: 12px;
+                font-weight: 500;
+            }
+        """)
+        brand_box.addSpacing(8)
+        brand_box.addWidget(self.proj_title)
+        header_layout.addLayout(brand_box)
+
+        header_layout.addStretch(1)
+
+        # Action Bar controls (Project, Git, Lang, Theme, Export)
         self.action_bar = ActionBar(
             select_project_cb=self.select_project,
             export_selected_cb=self.export_selected,
@@ -217,42 +326,30 @@ class MainWindow(QMainWindow):
             export_zip_cb=self.export_zip,
             git_toggle_cb=self.refresh_scan
         )
-        left_box.addWidget(self.proj_title)
-        left_box.addWidget(self.action_bar)
-        header_layout.addLayout(left_box, 1)
+        header_layout.addWidget(self.action_bar)
 
-        # Right Box: Support Card
-        self.support_card = QFrame()
-        self.support_card.setFixedWidth(400)
-        self.support_card.setStyleSheet("QFrame { background-color: #1e1e1e; border-radius: 12px; border: 1px solid #333; }")
-        
-        support_layout = QHBoxLayout(self.support_card)
-        support_layout.setContentsMargins(15, 12, 15, 12)
-        
-        info_col = QVBoxLayout()
-        lbl_support = QLabel("<b>☕ Support Project</b>")
-        lbl_support.setStyleSheet("color: #FFD700; font-size: 15px; border:none;")
-        self.btn_coffee = QLabel('<a href="https://paypal.me/raza489991" style="color:#4fc3f7; text-decoration:none;">❤️ Support via PayPal</a>')
-        self.btn_coffee.setOpenExternalLinks(True)
-        self.btn_contact = QLabel('<a href="mailto:hasnainrazamemon9@gmail.com" style="color:#999; text-decoration:none; font-size:11px;">📧 Contact Dev</a>')
-        self.btn_contact.setOpenExternalLinks(True)
-        self.btn_mobile = QLabel('<span style="color:#999; font-size:12px;">📞 +91 99258 11505</span>')
-
-        info_col.addWidget(lbl_support)
-        info_col.addWidget(self.btn_coffee)
-        info_col.addWidget(self.btn_contact)
-        info_col.addWidget(self.btn_mobile)
-        info_col.addStretch()
-        
-        self.qr_label = QLabel()
-        self.qr_label.setFixedSize(110, 110)
-        self.qr_label.setStyleSheet("border: 2px solid #555; background-color: #fff; border-radius: 8px;")
-        self.qr_label.setScaledContents(True)
-        self.load_embedded_qr()
-
-        support_layout.addLayout(info_col)
-        support_layout.addWidget(self.qr_label)
-        header_layout.addWidget(self.support_card)
+        # Sponsor Button
+        self.btn_sponsor = QPushButton("☕ Sponsor")
+        self.btn_sponsor.setFixedHeight(34)
+        self.btn_sponsor.setCursor(QCursor(Qt.PointingHandCursor))
+        self.btn_sponsor.setStyleSheet("""
+            QPushButton {
+                background-color: #21262d;
+                color: #f0883e;
+                border: 1px solid #30363d;
+                border-radius: 6px;
+                font-weight: 600;
+                font-size: 12px;
+                padding: 0 12px;
+            }
+            QPushButton:hover {
+                background-color: #30363d;
+                border-color: #f0883e;
+                color: #ffa657;
+            }
+        """)
+        self.btn_sponsor.clicked.connect(self.show_sponsor)
+        header_layout.addWidget(self.btn_sponsor)
 
         self.main_layout.addWidget(self.header_frame)
 
@@ -260,7 +357,6 @@ class MainWindow(QMainWindow):
         self.splitter = QSplitter(Qt.Horizontal)
         self.sidebar = PhaseSidebar()
         
-        # Workspace is initialized with custom callback for feature filter system
         self.workspace = Workspace(
             start_cb=self.start_analysis, 
             open_project_cb=self.select_project,
@@ -269,20 +365,12 @@ class MainWindow(QMainWindow):
         
         self.splitter.addWidget(self.sidebar)
         self.splitter.addWidget(self.workspace)
-        self.splitter.setSizes([260, 1040])
+        self.splitter.setSizes([275, 1045])
         self.main_layout.addWidget(self.splitter)
 
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)
-
-    def load_embedded_qr(self):
-        try:
-            img_data = base64.b64decode(QR_DATA_BASE64)
-            pix = QPixmap()
-            pix.loadFromData(img_data)
-            self.qr_label.setPixmap(pix)
-        except:
-            self.qr_label.setText("QR")
+        self.status_bar.showMessage("Ready. Select a project folder or drag & drop to begin.")
 
     def dragEnterEvent(self, event: QDragEnterEvent):
         if event.mimeData().hasUrls(): event.acceptProposedAction()
@@ -297,7 +385,19 @@ class MainWindow(QMainWindow):
 
     def load_project(self, path):
         AppState.project_root = path
-        self.proj_title.setText(f"PROJECT: {os.path.basename(path).upper()}")
+        proj_name = os.path.basename(path)
+        self.proj_title.setText(f"📁  {proj_name}")
+        self.proj_title.setStyleSheet("""
+            QLabel {
+                background-color: #0f141c;
+                color: #58a6ff;
+                border: 1px solid #1f6feb;
+                border-radius: 6px;
+                padding: 4px 10px;
+                font-size: 12px;
+                font-weight: 600;
+            }
+        """)
         self.action_bar.check_git_status(path)
         self.perform_scan(path, self.action_bar.git_check.isChecked())
         self.workspace.project_loaded()
