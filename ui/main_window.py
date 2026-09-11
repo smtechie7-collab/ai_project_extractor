@@ -482,6 +482,7 @@ class MainWindow(QMainWindow):
             out = f"[ERROR] Phase '{phase}' failed:\n{traceback.format_exc()}"
 
         self.update_output_signal.emit(phase, out or "[INFO] No data generated for this phase.")
+        return out or "[INFO] No data generated for this phase."
 
 
     def run_feature_extract(self, query: str, max_files: int = None):
