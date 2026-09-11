@@ -28,6 +28,14 @@ class RoleAuditor:
     GOD_CLASS_THRESHOLD = 500
     DEPENDENCY_THRESHOLD = 10
 
+    NON_CODE_EXTENSIONS = (
+        ".css", ".scss", ".sass", ".less",
+        ".md", ".markdown", ".txt", ".rst",
+        ".json", ".yaml", ".yml", ".toml", ".xml",
+        ".html", ".htm", ".webmanifest",
+        ".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico"
+    )
+
     JS_IMPORT_RE = re.compile(r"""(?:import\s+.*?from\s+['"]([^'"]+)['"]|import\s+['"]([^'"]+)['"]|require\s*\(\s*['"]([^'"]+)['"]\))""")
     KOTLIN_JAVA_IMPORT_RE = re.compile(r"""import\s+(?:static\s+)?([\w.]+)""")
     CPP_INCLUDE_RE = re.compile(r"""#include\s*[<"]([^>"]+)[>"]""")
@@ -60,8 +68,8 @@ class RoleAuditor:
     def _get_default_roles_for_lang(lang: str) -> List[str]:
         if "python" in lang:
             return ["ROUTER", "SERVICE", "MODEL", "TASK", "CONFIG", "UTIL", "TEST", "CLI", "OTHER"]
-        elif "javascript" in lang or "js" in lang:
-            return ["COMPONENT", "PAGE_ROUTE", "HOOK", "STORE", "SERVICE_API", "SERVER", "MODEL_TYPE", "CONFIG", "UTIL", "TEST", "OTHER"]
+        elif "javascript" in lang or "js" in lang or "ts" in lang or "web" in lang:
+            return ["FEATURE_MODULE", "COMPONENT", "SERVICE_API", "STORE", "UTIL", "CONFIG", "APP_ENTRY", "HTML_VIEW", "SPEC_DOC", "STYLESHEET", "SERVER", "TEST", "OTHER"]
         elif "kotlin" in lang:
             return ["SCREEN", "VIEWMODEL", "UISTATE", "USECASE", "REPOSITORY", "REPO_IMPL", "DAO", "ENTITY", "WORKER", "DI_MODULE", "OTHER"]
         elif "java" in lang:
@@ -125,20 +133,22 @@ class RoleAuditor:
         role = RoleAuditor.classify_role(path, content, lang)
 
         # Risk scoring
-        is_god = line_count > RoleAuditor.GOD_CLASS_THRESHOLD
+        is_non_code = path.lower().endswith(RoleAuditor.NON_CODE_EXTENSIONS)
+        is_god = (not is_non_code) and (line_count > RoleAuditor.GOD_CLASS_THRESHOLD)
         score = 0
-        if line_count > 300: score += 15
-        if line_count > 600: score += 25
-        if dep_count > 8: score += 15
-        if dep_count > 15: score += 20
+        if not is_non_code:
+            if line_count > 300: score += 15
+            if line_count > 600: score += 25
+            if dep_count > 8: score += 15
+            if dep_count > 15: score += 20
 
-        # Language-specific risks
-        if "kotlin" in lang and "!!" in content:
-            score += 15
-        elif "python" in lang and ("eval(" in content or "exec(" in content):
-            score += 15
-        elif ("javascript" in lang or "js" in lang) and ("eval(" in content or "dangerouslySetInnerHTML" in content):
-            score += 15
+            # Language-specific risks
+            if "kotlin" in lang and "!!" in content:
+                score += 15
+            elif "python" in lang and ("eval(" in content or "exec(" in content):
+                score += 15
+            elif ("javascript" in lang or "js" in lang) and ("eval(" in content or "dangerouslySetInnerHTML" in content):
+                score += 15
 
         return RoleMetric(
             path=path,
@@ -175,28 +185,66 @@ class RoleAuditor:
                 return "UTIL"
             return "OTHER"
 
-        # ── 2. JAVASCRIPT / TYPESCRIPT CLASSIFICATION ──
-        if "javascript" in lang or "js" in lang or path.endswith((".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs")):
+        # ── 2. JAVASCRIPT / TYPESCRIPT / WEB PORTAL CLASSIFICATION ──
+        if "javascript" in lang or "js" in lang or "ts" in lang or "web" in lang or path.endswith((".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".html", ".css", ".md", ".webmanifest")):
+            # Document & markup assets
+            if path.endswith((".md", ".markdown")):
+                return "SPEC_DOC"
+            if path.endswith((".html", ".htm")):
+                return "HTML_VIEW"
+            if path.endswith((".css", ".scss", ".sass", ".less")):
+                return "STYLESHEET"
+            if name in ["sw.js", "service-worker.js", "serviceworker.js"] or "workbox" in content_lower:
+                return "SERVICE_WORKER"
+
+            # Tests
             if ".test." in name or ".spec." in name or "/test" in lower_path or "/__tests__" in lower_path:
                 return "TEST"
+
+            # React Hooks
             if name.startswith("use") and not name.startswith("user"):
                 return "HOOK"
-            if any(k in name or f"/{k}" in lower_path for k in ["store", "slice", "reducer", "atom", "state"]) or "zustand" in content_lower or "createSlice" in content:
+
+            # State / Store
+            if any(k in name or f"/{k}" in lower_path for k in ["store", "slice", "reducer", "atom", "state"]) or "zustand" in content_lower or "createslice" in content_lower or name == "offlinestore.js":
                 return "STORE"
-            if "/pages/" in lower_path or "/app/" in lower_path and ("page." in name or "route." in name) or "route" in name:
+
+            # Page Routes
+            if "/pages/" in lower_path or "/app/" in lower_path and ("page." in name or "route." in name) or "route." in name:
                 return "PAGE_ROUTE"
-            if any(k in name or f"/{k}" in lower_path for k in ["service", "api", "client", "fetcher", "query"]):
-                return "SERVICE_API"
-            if name in ["server.js", "server.ts", "app.js", "app.ts"] or "express" in content_lower or "fastify" in content_lower:
+
+            # Backend Server vs Frontend App Entry
+            if name in ["server.js", "server.ts"] or "express()" in content_lower or "app.listen(" in content_lower or "fastify(" in content_lower:
                 return "SERVER"
-            if any(k in name or f"/{k}" in lower_path for k in ["model", "type", "interface", "schema", "dto"]):
-                return "MODEL_TYPE"
-            if path.endswith((".jsx", ".tsx")) or "/components/" in lower_path or name[0].isupper():
+            if name in ["app.js", "main.js", "index.js", "bundle.js", "bootstrap.js"]:
+                if "express" in content_lower or "createserver" in content_lower or "app.listen" in content_lower:
+                    return "SERVER"
+                return "APP_ENTRY"
+
+            # Vanilla JS Feature Modules / Views / Modals
+            if "/modules/" in lower_path or name.endswith(("module.js", "modal.js", "view.js", "screen.js", "hub.js", "vault.js", "register.js")):
+                return "FEATURE_MODULE"
+
+            # Modern React / Vue Components
+            if path.endswith((".jsx", ".tsx")) or "/components/" in lower_path or (name[0].isupper() and path.endswith(".js")):
                 return "COMPONENT"
-            if any(k in name for k in ["config", "rc", "webpack", "vite", "package.json"]):
+
+            # Services / APIs
+            if any(k in name or f"/{k}" in lower_path for k in ["service", "api", "client", "fetcher", "query", "firebase", "sync", "network"]):
+                return "SERVICE_API"
+
+            # Models / Data Contracts / DTOs
+            if any(k in name or f"/{k}" in lower_path for k in ["model", "type", "interface", "schema", "dto", "contract"]):
+                return "MODEL_TYPE"
+
+            # Config
+            if any(k in name for k in ["config", "rc", "webpack", "vite", "package.json", "manifest"]):
                 return "CONFIG"
-            if any(k in name or f"/{k}" in lower_path for k in ["util", "helper", "lib", "common"]):
+
+            # Utilities / Domain Helpers
+            if any(k in name or f"/{k}" in lower_path for k in ["util", "helper", "lib", "common", "validator", "scheme", "engine", "formatter", "parser", "print"]):
                 return "UTIL"
+
             return "OTHER"
 
         # ── 3. KOTLIN / ANDROID CLASSIFICATION ──
@@ -239,13 +287,16 @@ class RoleAuditor:
     def detect_violations(metrics: List[RoleMetric]) -> List[str]:
         violations = []
         for m in metrics:
+            if m.path.lower().endswith(RoleAuditor.NON_CODE_EXTENSIONS):
+                continue
+
             fname = os.path.basename(m.path)
-            if m.role in ["SCREEN", "COMPONENT", "UI"] and m.dependency_count > 12:
+            if m.role in ["SCREEN", "COMPONENT", "FEATURE_MODULE", "UI"] and m.dependency_count > 12:
                 violations.append(f"🚩 UI Overload: {fname} has {m.dependency_count} dependencies (tightly coupled UI).")
             elif m.role in ["REPO_IMPL", "SERVICE", "CONTROLLER", "ROUTER"] and m.line_count > 400:
                 violations.append(f"🔥 Fat Component: {fname} ({m.role}) has {m.line_count} lines (high complexity).")
             elif m.is_god_class:
-                violations.append(f"💀 God Object: {fname} exceeds {RoleAuditor.GOD_CLASS_THRESHOLD} lines.")
+                violations.append(f"💀 God Object: {fname} ({m.role}) exceeds {RoleAuditor.GOD_CLASS_THRESHOLD} lines.")
             elif m.dependency_count > 15:
                 violations.append(f"⚠️ Dependency Explosion: {fname} imports {m.dependency_count} dependencies.")
         return violations

@@ -10,11 +10,12 @@ class FlowIdentifier:
     
     # Business domain keywords (checked against path/filename tokens)
     DOMAINS = {
-        "SALES_PAYMENT_FLOW": ["sale", "billing", "invoice", "checkout", "cart", "order", "payment", "stripe", "transaction"],
+        "SALES_PAYMENT_FLOW": ["sale", "billing", "invoice", "checkout", "cart", "order", "payment", "stripe", "transaction", "pos", "quotation"],
+        "PURCHASE_PROCUREMENT_FLOW": ["purchase", "procurement", "supplier", "vendor", "buy"],
         "INVENTORY_CATALOG_FLOW": ["inventory", "stock", "product", "warehouse", "catalog", "item", "adjustment"],
-        "ACCOUNTING_FINANCE_FLOW": ["ledger", "journal", "voucher", "account", "tax", "gst", "invoice", "balance", "financial"],
-        "AUTH_SECURITY_FLOW": ["auth", "login", "signup", "register", "session", "oauth", "jwt", "password", "credential", "permission", "user"],
-        "CONTENT_NOTIFICATION_FLOW": ["notification", "email", "message", "alert", "feed", "post", "comment", "media", "upload"]
+        "ACCOUNTING_FINANCE_FLOW": ["ledger", "journal", "voucher", "account", "tax", "gst", "balance", "financial", "capital", "expense", "daybook", "cash"],
+        "AUTH_SECURITY_FLOW": ["auth", "login", "signup", "register", "session", "oauth", "jwt", "password", "credential", "permission", "onboarding", "kyc"],
+        "CONTENT_NOTIFICATION_FLOW": ["notification", "email", "message", "alert", "feed", "post", "comment", "whatsapp", "communication"]
     }
 
     FLOW_ROLES = {
@@ -22,8 +23,8 @@ class FlowIdentifier:
         "SCREEN", "VIEWMODEL", "UISTATE", "USECASE", "REPOSITORY", "REPO_IMPL", "DAO", "ENTITY", "WORKER",
         # Python
         "ROUTER", "SERVICE", "MODEL", "TASK", "CLI",
-        # JS / TS
-        "PAGE_ROUTE", "COMPONENT", "HOOK", "STORE", "SERVICE_API", "SERVER", "MODEL_TYPE",
+        # JS / TS / Web
+        "PAGE_ROUTE", "COMPONENT", "FEATURE_MODULE", "APP_ENTRY", "HOOK", "STORE", "SERVICE_API", "SERVER", "MODEL_TYPE",
         # Java
         "CONTROLLER", "SERVICE", "REPOSITORY", "ENTITY", "DTO",
         # Universal
@@ -32,7 +33,7 @@ class FlowIdentifier:
 
     ROLE_SORT_ORDER = {
         # Entry / UI / Controllers
-        "SCREEN": 0, "COMPONENT": 0, "PAGE_ROUTE": 0, "ROUTER": 0, "CONTROLLER": 0, "CLI": 0, "UI": 0,
+        "APP_ENTRY": 0, "SCREEN": 0, "COMPONENT": 0, "FEATURE_MODULE": 0, "PAGE_ROUTE": 0, "ROUTER": 0, "CONTROLLER": 0, "CLI": 0, "UI": 0,
         # Logic / State / Orchestration
         "VIEWMODEL": 1, "HOOK": 1, "STORE": 1, "USECASE": 1, "SERVICE": 1, "UISTATE": 1,
         # Data / Storage
@@ -45,16 +46,21 @@ class FlowIdentifier:
     def identify_critical_paths(metrics) -> Dict[str, List[str]]:
         paths = {domain: [] for domain in FlowIdentifier.DOMAINS}
         
+        from state.app_state import AppState
+
         for m in metrics:
             if m.role not in FlowIdentifier.FLOW_ROLES:
                 continue
 
-            path_lower = m.path.lower()
             filename = os.path.basename(m.path)
+            try:
+                rel = os.path.relpath(m.path, AppState.project_root) if AppState.project_root else filename
+            except Exception:
+                rel = filename
+            token_string = rel.lower().replace("\\", "/")
             
             for domain, keywords in FlowIdentifier.DOMAINS.items():
-                # Avoid trivial matches on generic words like "role" or single letters
-                if any(kw in path_lower for kw in keywords):
+                if any(kw in token_string for kw in keywords):
                     paths[domain].append(f"{m.role}: {filename}")
         
         # Keep only domains where relevant components exist

@@ -18,8 +18,10 @@ class DependencyAlert:
         "SERVICE": 8,
         "MODEL": 6,
         "TASK": 7,
-        # JS / TS
+        # JS / TS / Web
         "COMPONENT": 10,
+        "FEATURE_MODULE": 12,
+        "APP_ENTRY": 15,
         "PAGE_ROUTE": 8,
         "HOOK": 6,
         "STORE": 6,

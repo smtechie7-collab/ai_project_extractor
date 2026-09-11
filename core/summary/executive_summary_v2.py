@@ -52,7 +52,12 @@ class ExecutiveSummaryV2:
             if any("bare except" in str(v).lower() for v in violations):
                 lines.append("- Caution: Address bare exception handlers flagged in Risk Analysis to avoid suppressed bugs.")
         elif "javascript" in lang_lower or "ts" in lang_lower:
-            lines.append("- AI Prompting: Provide STORE (state) and COMPONENT definitions together for UI bug fixes.")
+            if stats and stats.counts.get("FEATURE_MODULE", 0) > 0:
+                lines.append("- Vanilla JS Architecture: Modular feature architecture detected. Feed FEATURE_MODULE + STORE to AI for UI enhancements.")
+            elif stats and stats.counts.get("COMPONENT", 0) > 0:
+                lines.append("- Component Architecture: Provide STORE (state) and COMPONENT definitions together for UI bug fixes.")
+            if stats and stats.counts.get("SPEC_DOC", 0) > 0:
+                lines.append("- Specifications: Reference SPEC_DOC contracts for Firestore schema, data parity, and peripheral hardware rules.")
             lines.append("- Modernization: Review CommonJS require() and TypeScript 'any' occurrences in Risk Analysis.")
         elif "kotlin" in lang_lower:
             if stats and stats.counts.get("UISTATE", 0) == 0:
