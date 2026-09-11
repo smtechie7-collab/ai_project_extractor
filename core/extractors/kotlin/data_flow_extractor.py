@@ -3,14 +3,14 @@ from core.utils.file_reader import read_text_file
 
 # --- REGEX PATTERNS ---
 
-# 1. Class Definition
+# 1. Class Definition (handles standard primary constructors, annotations like @Inject, and explicit constructor)
 CLASS_DEF_PATTERN = re.compile(
-    r'class\s+(\w+)(?:<[^>]+>)?\s*.*?constructor\s*\(([^)]+)\)', 
-    re.MULTILINE | re.DOTALL
+    r'class\s+([A-Za-z0-9_]+)(?:<[^>]+>)?\s*(?:@[A-Za-z0-9_.]+(?:\([^)]*\))?\s*)*(?:(?:private|protected|internal|public)\s+)?(?:constructor)?\s*\(([^)]+)\)', 
+    re.MULTILINE
 )
 
-# 2. Parameter Extraction
-PARAM_PATTERN = re.compile(r'(?:val|var)?\s*(\w+)\s*:\s*([A-Za-z0-9_<>.]+)')
+# 2. Parameter Extraction (handles modifiers, annotations, val/var, and param types)
+PARAM_PATTERN = re.compile(r'(?:(?:private|protected|public|internal)\s+)?(?:val|var)?\s*(?:@[A-Za-z0-9_.]+\s+)?(\w+)\s*:\s*([A-Za-z0-9_<>.]+)')
 
 # 3. Instantiation inside Return Statements (Common in AppContainer helper functions)
 # Looks for: return MyViewModel( ... )
@@ -45,10 +45,15 @@ def extract_data_flow(tree_root):
         return deps
 
     def walk(node):
-        if not node.is_dir and node.path.endswith(".kt"):
+        if node.is_dir:
+            for child in getattr(node, "children", []):
+                walk(child)
+            return
+
+        if node.path.endswith(".kt"):
             try:
                 code = read_text_file(node.path)
-            except:
+            except Exception:
                 return
 
             # --- STRATEGY 1: Parse Class Definitions ---

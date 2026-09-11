@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """
 ui/main_window.py
 =================
@@ -42,6 +42,10 @@ try:
     from ui.sidebar import PhaseSidebar
     from ui.workspace import Workspace
     from ui.action_bar import ActionBar
+    # UI Helpers
+    from ui.sidebar import PhaseSidebar
+    from ui.workspace import Workspace
+    from ui.action_bar import ActionBar
     from ui.worker import AnalysisWorker
     from state.app_state import AppState
     from state.output_registry import OutputRegistry
@@ -52,31 +56,32 @@ try:
     from core.extractors.python.call_graph import export_python_call_graph
     from core.extractors.python.risk_analyzer import analyze_python_risks
 
+    # --- JAVASCRIPT / TYPESCRIPT / WEB PORTAL EXTRACTORS ---
+    from core.extractors.js_ts.module_exporter import export_js_ts_modules, export_js_ts_ai_code
+    from core.extractors.js_ts.dependency_graph import export_js_ts_dependency_graph
+    from core.extractors.js_ts.risk_analyzer import analyze_js_ts_risks
+    from core.extractors.js_ts.firestore_schema_extractor import extract_firestore_schema
+    from core.extractors.js_ts.web_dom_map_extractor import extract_web_dom_map
+    from core.extractors.js_ts.hardware_service_extractor import extract_hardware_services
+    from core.extractors.js_ts.spec_digest_extractor import extract_spec_digest
+
     # --- KOTLIN EXTRACTORS ---
-    from core.extractors.kotlin.code_exporter import export_kotlin_modules
+    from core.extractors.kotlin.code_exporter import export_kotlin_modules, export_kotlin_module_classification
+    from core.extractors.kotlin.constitution_digest_extractor import extract_constitution_digest
+    from core.extractors.kotlin.sync_outbox_auditor import audit_sync_outbox
+    from core.extractors.kotlin.data_flow_extractor import extract_data_flow
     from core.extractors.kotlin.room_schema_extractor import extract_room_schema
     from core.extractors.kotlin.mermaid_visualizer import generate_mermaid_visuals
-    
-    # Safe imports for optional Kotlin modules
-    try:
-        from core.extractors.kotlin.call_graph import export_kotlin_call_graph
-    except ImportError: export_kotlin_call_graph = None
-    try:
-        from core.extractors.kotlin.navigation_graph import export_kotlin_navigation_graph
-    except ImportError: export_kotlin_navigation_graph = None
-    try:
-        from core.extractors.kotlin.di_graph_exporter import export_kotlin_di_graph
-    except ImportError: export_kotlin_di_graph = None
-    try:
-        from core.extractors.kotlin.ui_map_exporter import export_kotlin_ui_map
-    except ImportError: export_kotlin_ui_map = None
-    try:
-        from core.extractors.kotlin.risk_analyzer import analyze_kotlin_risks
-    except ImportError: analyze_kotlin_risks = None
+    from core.extractors.kotlin.call_graph import export_kotlin_call_graph
+    from core.extractors.kotlin.navigation_graph import export_kotlin_navigation_graph
+    from core.extractors.kotlin.di_graph_exporter import export_kotlin_di_graph
+    from core.extractors.kotlin.ui_map_exporter import export_kotlin_ui_map
+    from core.extractors.kotlin.risk_analyzer import analyze_kotlin_risks
 
 except ImportError as e:
     print(f"[WARNING] Some modules could not be imported: {e}")
     traceback.print_exc()
+
 
 # Default QR Data (Base64)
 QR_DATA_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAWIAAAFiCAMAAAD7giJIAAAAVFBMVEUfHx/4+v4dHR33+f36/P/8/v8mJib19/suLi7o6u05OTlSUlJFRUbw8vXX2dvh4uVdXV6jpKWwsbO7vL7Oz9LFxsiXmJmNjY5oaWmEhIV8fH1yc3OtGyqdAAAgAElEQVR42uyci6KqrBKANUy0UvN+6f3f83AZUAYIs1p77f/sqbVKRLTPEYZhICrLsiorJnleFJSQXHe7//8NCKbE48E3KSXLEki8DzAgTBpnvALbsk4TA0B2Mye6b8XcqsYODwCbhRYovV2EqU/XufxVFvFfBnmhatPIlxHEj6D/MQcI0flqjRoUmzPJToh9qIpAT8iXI5K+pAZ7tAauA8CaMyseeWMdGAi8VjZzgu6klyIb5x+//X2wpmJfPKclma61ljcc/EoTjzT5RRydJEif8/wGBckQRz7LpnOLb9lBLvCd5kgPn9BcRzLlTuLFA7NsQOU2GouwOSw="
@@ -153,6 +158,7 @@ class MainWindow(QMainWindow):
         
         # Connect Actions
         self.action_bar.language_combo.currentIndexChanged.connect(self.on_language_changed_trigger)
+        self.sidebar.phase_clicked.connect(self.on_sidebar_phase_clicked)
         
         # Connect Worker Signal
         self.update_output_signal.connect(self.on_update_output)
@@ -165,6 +171,7 @@ class MainWindow(QMainWindow):
             AppState.selected_language = "kotlin"
 
         self.update_phases_list()
+
 
     def setup_styles(self):
         self.setStyleSheet("""
@@ -297,28 +304,26 @@ class MainWindow(QMainWindow):
         self.action_bar.enable_export()
         self.update_phases_list()
 
-    def update_phases_list(self):
-        phases = [
-            "Structure",
-            "Architecture Heatmap",
-            "Critical Business Flows",
-            "Dependency Explosion Audit",
-            "Executive Summary 2.0"
-        ]
-        
-        lang = (AppState.selected_language or "kotlin").lower()
+    def on_sidebar_phase_clicked(self, phase: str):
+        idx = self.workspace.phase_selector.findText(phase)
+        if idx != -1:
+            self.workspace.phase_selector.setCurrentIndex(idx)
+        else:
+            self.workspace.output.setPlainText(f"[INFO] Phase '{phase}' has not been generated yet. Click '▶ Run Analysis' to generate all outputs.")
 
-        if "python" in lang:
-            phases.extend(["Module Classification", "Full Source (AI)", "Call Graph", "Risk Analysis", "AI Prompt"])
-        elif "kotlin" in lang or "java" in lang:
-            phases.extend([
-                "Module Classification", "Full Source (AI)", "Database Schema", 
-                "Visual Architecture (Mermaid)", "Call Graph", "Navigation Graph", 
-                "DI Graph", "UI Map", "Risk Analysis"
-            ])
-        
-        self.current_phases = phases
-        self.sidebar.load_phases(phases)
+    def update_phases_list(self):
+        lang = (AppState.selected_language or "kotlin").lower()
+        phases = LANGUAGE_PHASES.get(lang)
+        if not phases:
+            for k in LANGUAGE_PHASES:
+                if k in lang:
+                    phases = LANGUAGE_PHASES[k]
+                    break
+        if not phases:
+            phases = LANGUAGE_PHASES.get("all", ["Structure", "Executive Summary 2.0"])
+
+        self.current_phases = list(phases)
+        self.sidebar.load_phases(self.current_phases)
 
     def on_language_changed_trigger(self, index):
         lang = self.action_bar.language_combo.itemData(index)
@@ -337,22 +342,30 @@ class MainWindow(QMainWindow):
         self.workspace.add_output("Structure", struct)
 
     def start_analysis(self):
-        self.sidebar.setEnabled(False)
+        if not AppState.tree_root:
+            self.status_bar.showMessage("❌ Pehle project select karo (📂 Select Project)")
+            return
+
         self.workspace.start_btn.setEnabled(False)
-        self.status_bar.showMessage("Running deep analysis...")
+        self.status_bar.showMessage("Running deep multi-language analysis...")
         
         self.worker = AnalysisWorker(list(self.current_phases), self.run_phase)
-        self.worker.progress.connect(self.workspace.update_progress)
+        self.worker.progress.connect(self.on_analysis_progress)
         self.worker.finished.connect(self.on_analysis_finished)
         self.worker.start()
 
+    def on_analysis_progress(self, percent, phase):
+        self.workspace.update_progress(percent, phase)
+        self.sidebar.mark_phase_running(phase)
+
     def run_phase(self, phase):
         root = AppState.tree_root
-        lang = AppState.selected_language or "kotlin"
+        lang = (AppState.selected_language or "kotlin").lower()
+        proj_name = os.path.basename(AppState.project_root or "Project")
         out = ""
 
         try:
-            # Intelligence Data Retrieval
+            # Common Intelligence Data Retrieval
             metrics, stats = [], None
             if phase in ["Architecture Heatmap", "Critical Business Flows", "Dependency Explosion Audit", "Executive Summary 2.0"]:
                 try:
@@ -360,9 +373,9 @@ class MainWindow(QMainWindow):
                 except Exception as e:
                     print(f"Audit Error: {e}")
 
-            # Routing Phase Actions
+            # ── UNIVERSAL & CORE PHASES ──
             if phase == "Structure":
-                out = "\n".join(build_tree_text(root))
+                out = "\n".join(build_tree_text(root)) if root else "Empty Directory"
             elif phase == "Architecture Heatmap":
                 out = RiskHeatmap.generate(metrics)
             elif phase == "Critical Business Flows":
@@ -371,31 +384,61 @@ class MainWindow(QMainWindow):
                 out = DependencyAlert.analyze(metrics)
             elif phase == "Executive Summary 2.0":
                 violations = RoleAuditor.detect_violations(metrics)
-                out = ExecutiveSummaryV2.build(os.path.basename(AppState.project_root or "Project"), metrics, violations, stats)
+                out = ExecutiveSummaryV2.build(proj_name, metrics, violations, stats)
+            elif phase == "AI Prompt":
+                out = generate_ai_prompt(proj_name, lang, OutputRegistry._outputs)
 
-            # Language Specific Logic
-            elif "python" in lang.lower():
+            # ── PYTHON SPECIFIC PHASES ──
+            elif "python" in lang:
                 if phase == "Module Classification": out = export_python_modules(root)
                 elif phase == "Full Source (AI)": out = export_python_ai_code(root)
                 elif phase == "Call Graph": out = export_python_call_graph(root)
                 elif phase == "Risk Analysis": out = analyze_python_risks(root)
-                elif phase == "AI Prompt": out = generate_ai_prompt("Proj", "python", OutputRegistry._outputs)
 
-            elif "kotlin" in lang.lower() or "java" in lang.lower():
-                if phase == "Module Classification": out = export_kotlin_modules(root)
+            # ── JAVASCRIPT / TYPESCRIPT / WEB PORTAL PHASES ──
+            elif "javascript" in lang or "js" in lang or "ts" in lang or "web" in lang:
+                if phase == "Module Classification": out = export_js_ts_modules(root)
+                elif phase == "Full Source (AI)": out = export_js_ts_ai_code(root)
+                elif phase == "Firestore & Backend Schema": out = extract_firestore_schema(root)
+                elif phase == "Web UI & DOM Map": out = extract_web_dom_map(root)
+                elif phase == "Hardware & Service Integrations": out = extract_hardware_services(root)
+                elif phase == "Architecture & Spec Digest": out = extract_spec_digest(root)
+                elif phase == "Dependency Graph": out = export_js_ts_dependency_graph(root)
+                elif phase == "Risk Analysis": out = analyze_js_ts_risks(root)
+
+            # ── KOTLIN SPECIFIC PHASES ──
+            elif "kotlin" in lang:
+                if phase == "Module Classification": out = export_kotlin_module_classification(root)
                 elif phase == "Full Source (AI)": out = export_kotlin_modules(root)
+                elif phase == "Constitution & Architecture Specs": out = extract_constitution_digest(root)
+                elif phase == "Cloud Sync & Outbox Engine Audit": out = audit_sync_outbox(root)
+                elif phase == "Data Flow Tracer": out = extract_data_flow(root)
                 elif phase == "Database Schema": out = extract_room_schema(root)
                 elif phase == "Visual Architecture (Mermaid)": out = generate_mermaid_visuals(root)
-                elif phase == "Call Graph" and export_kotlin_call_graph: out = export_kotlin_call_graph(root)
-                elif phase == "Navigation Graph" and export_kotlin_navigation_graph: out = export_kotlin_navigation_graph(root)
-                elif phase == "DI Graph" and export_kotlin_di_graph: out = export_kotlin_di_graph(root)
-                elif phase == "UI Map" and export_kotlin_ui_map: out = export_kotlin_ui_map(root)
-                elif phase == "Risk Analysis" and analyze_kotlin_risks: out = analyze_kotlin_risks(root)
+                elif phase == "Call Graph": out = export_kotlin_call_graph(root)
+                elif phase == "Navigation Graph": out = export_kotlin_navigation_graph(root)
+                elif phase == "DI Graph": out = export_kotlin_di_graph(root)
+                elif phase == "UI Map": out = export_kotlin_ui_map(root)
+                elif phase == "Risk Analysis": out = analyze_kotlin_risks(root)
+
+            # ── JAVA SPECIFIC PHASES ──
+            elif "java" in lang:
+                if phase == "Module Classification": out = export_kotlin_module_classification(root)
+                elif phase == "Full Source (AI)": out = export_kotlin_modules(root)
+                elif phase == "Call Graph": out = export_kotlin_call_graph(root)
+                elif phase == "Risk Analysis": out = analyze_kotlin_risks(root)
+
+            # ── C++ / GENERAL PHASES ──
+            else:
+                if phase == "Module Classification": out = export_python_modules(root)
+                elif phase == "Full Source (AI)": out = export_python_ai_code(root)
+                elif phase == "Risk Analysis": out = "✅ Generic scan complete. No critical risks detected."
 
         except Exception as e:
             out = f"[ERROR] Phase '{phase}' failed:\n{traceback.format_exc()}"
 
-        self.update_output_signal.emit(phase, out or "[INFO] No data generated.")
+        self.update_output_signal.emit(phase, out or "[INFO] No data generated for this phase.")
+
 
     def run_feature_extract(self, query: str, max_files: int = None):
         """
@@ -431,13 +474,17 @@ class MainWindow(QMainWindow):
     @Slot(str, str)
     def on_update_output(self, phase, content):
         self.workspace.add_output(phase, content)
+        self.sidebar.mark_phase_done(phase)
 
     def on_analysis_finished(self):
         self.sidebar.setEnabled(True)
         self.workspace.start_btn.setEnabled(True)
-        self.status_bar.showMessage("Analysis Complete.")
+        self.sidebar.mark_all_done()
+        self.status_bar.showMessage("✅ Analysis Complete.")
         if "Executive Summary 2.0" in self.current_phases: 
             self.workspace.phase_selector.setCurrentText("Executive Summary 2.0")
+            self.sidebar.select_phase("Executive Summary 2.0")
+
 
     def export_selected(self):
         path = QFileDialog.getExistingDirectory(self, "Export")

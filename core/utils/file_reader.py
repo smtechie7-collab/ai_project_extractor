@@ -31,11 +31,12 @@ def read_text_file(path: str, max_size_kb: int = 500) -> str:
     except Exception:
         pass
 
-    for encoding in ("utf-8", "latin-1"):
+    for encoding in ("utf-8-sig", "utf-8", "latin-1"):
         try:
             with open(path, "r", encoding=encoding, errors="ignore") as f:
                 return f.read()
         except Exception:
             continue
+
 
     return "[UNABLE TO READ FILE]"

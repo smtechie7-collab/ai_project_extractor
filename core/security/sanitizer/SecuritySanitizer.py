@@ -13,8 +13,6 @@ class SecuritySanitizer:
         ("GOOGLE_KEY", r'(AIza[0-9A-Za-z-_]{35})', 0),
         
         # 3. Generic Secrets (api_key = "xyz", "password": "abc")
-        # Captures: Variable name -> Separator -> Quote -> SECRET -> Quote
-        # Ref: matches patterns like: apiKey="123", "secret": "abc", password = 'pass'
         ("SECRET", r'(?i)(api[_-]?key|secret|token|password|auth|credential|passwd)["\']?\s*(:|:?=|:)\s*(["\'])([^"\']+)(["\'])', 4),
         
         # 4. Bearer Token
@@ -37,15 +35,16 @@ class SecuritySanitizer:
         for label, pattern, group_idx in SecuritySanitizer.PATTERNS:
             def replacer(match):
                 if group_idx == 0:
-                    # Replace the entire match
                     return f"[{label}_REDACTED]"
                 else:
-                    # Replace only the specific capture group (the secret value)
-                    # We reconstruct the string by replacing the secret part within the full match
-                    full_match = match.group(0)
-                    secret_part = match.group(group_idx)
-                    return full_match.replace(secret_part, f"[{label}_REDACTED]")
+                    # Precise span replacement within match
+                    s_start, s_end = match.span(group_idx)
+                    m_start = match.start()
+                    rel_start = s_start - m_start
+                    rel_end = s_end - m_start
+                    full = match.group(0)
+                    return full[:rel_start] + f"[{label}_REDACTED]" + full[rel_end:]
 
             redacted_text = re.sub(pattern, replacer, redacted_text)
             
-        return redacted_text
+        return redacted_text

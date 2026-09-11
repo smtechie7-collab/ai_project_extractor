@@ -204,13 +204,13 @@ class FeatureFilterExtractor:
         lines.append(f"🎯 FEATURE FILTER: '{self.raw_query.upper()}'")
         lines.append("=" * 70)
         lines.append(f"Keywords used   : {', '.join(self.keywords)}")
-        lines.append(f"Files found     : {len(top_files)}")
+        lines.append(f"Files matched   : {len(top_files)}")
         lines.append("")
-        lines.append("AI INSTRUCTION:")
+        lines.append("AI INSTRUCTIONS:")
         lines.append(
-            f"  Yeh files '{self.raw_query}' feature se directly related hain.\n"
-            "  Inhi files ke basis par analysis, refactor, ya fix karo.\n"
-            "  Baaki project files ignore kar sakte ho."
+            f"  The following files are directly related to the '{self.raw_query}' feature.\n"
+            "  Focus your architectural analysis, code modifications, or bug fixes on these files.\n"
+            "  Files are grouped by relevance score and architectural layer."
         )
         lines.append("=" * 70)
         lines.append("")
@@ -230,17 +230,7 @@ class FeatureFilterExtractor:
             role = self._detect_role(path)
             groups[role].append((path, score, content))
 
-        role_order = [
-            "SCREEN", "VIEWMODEL", "UISTATE", "USECASE",
-            "REPOSITORY", "REPO_IMPL", "DAO", "ENTITY",
-            "WORKER", "OTHER"
-        ]
-
-        for role in role_order:
-            if role not in groups:
-                continue
-
-            files = groups[role]
+        for role, files in sorted(groups.items(), key=lambda x: len(x[1]), reverse=True):
             lines.append("#" * 70)
             lines.append(f"LAYER: {role} ({len(files)} files)")
             lines.append("#" * 70)
@@ -263,21 +253,19 @@ class FeatureFilterExtractor:
         return "\n".join(lines)
 
     def _detect_role(self, path: str) -> str:
-        name = os.path.basename(path).lower()
-        if "viewmodel" in name:    return "VIEWMODEL"
-        if "uistate" in name or "state.kt" in name: return "UISTATE"
-        if "screen" in name:       return "SCREEN"
-        if "usecase" in name:      return "USECASE"
-        if "repoimpl" in name or "repositoryimpl" in name: return "REPO_IMPL"
-        if "repository" in name:   return "REPOSITORY"
-        if "dao" in name:          return "DAO"
-        if "entity" in name:       return "ENTITY"
-        if "worker" in name:       return "WORKER"
-        return "OTHER"
+        try:
+            from core.intelligence.role_auditor import RoleAuditor
+            from state.app_state import AppState
+            return RoleAuditor.classify_role(path, "", AppState.selected_language or "general")
+        except Exception:
+            return "MODULE"
 
     def _rel_path(self, path: str) -> str:
-        """Relative path banana - cleaner output ke liye"""
+        """Safe relative path starting from project root"""
         try:
-            return os.path.relpath(path)
+            from state.app_state import AppState
+            base = AppState.project_root or os.getcwd()
+            return os.path.relpath(path, start=base)
         except Exception:
-            return path
+            return os.path.basename(path)
+

@@ -1,19 +1,44 @@
-﻿import re
+import re
 import os
 from typing import List, Dict
 
 class FlowIdentifier:
     """
-    Business Processes detect karta hai (Sales, Inventory, etc.)
-    Trace karta hai: ViewModel -> UseCase -> Repository.
+    Detects critical business flows (Sales, Inventory, Auth, Data Processing)
+    and sequences them logically: Entry/Route -> Business Logic -> Data/Model.
     """
     
-    # Business domains ke keywords
+    # Business domain keywords (checked against path/filename tokens)
     DOMAINS = {
-        "SALES_FLOW": ["sale", "invoice", "bill", "customer", "order", "payment"],
-        "INVENTORY_FLOW": ["stock", "inventory", "product", "warehouse", "adjustment", "unit"],
-        "ACCOUNTING_FLOW": ["ledger", "journal", "voucher", "account", "tax", "gst", "debit", "credit"],
-        "AUTH_FLOW": ["login", "token", "session", "user", "auth", "permission", "profile"]
+        "SALES_PAYMENT_FLOW": ["sale", "billing", "invoice", "checkout", "cart", "order", "payment", "stripe", "transaction"],
+        "INVENTORY_CATALOG_FLOW": ["inventory", "stock", "product", "warehouse", "catalog", "item", "adjustment"],
+        "ACCOUNTING_FINANCE_FLOW": ["ledger", "journal", "voucher", "account", "tax", "gst", "invoice", "balance", "financial"],
+        "AUTH_SECURITY_FLOW": ["auth", "login", "signup", "register", "session", "oauth", "jwt", "password", "credential", "permission", "user"],
+        "CONTENT_NOTIFICATION_FLOW": ["notification", "email", "message", "alert", "feed", "post", "comment", "media", "upload"]
+    }
+
+    FLOW_ROLES = {
+        # Kotlin / Android
+        "SCREEN", "VIEWMODEL", "UISTATE", "USECASE", "REPOSITORY", "REPO_IMPL", "DAO", "ENTITY", "WORKER",
+        # Python
+        "ROUTER", "SERVICE", "MODEL", "TASK", "CLI",
+        # JS / TS
+        "PAGE_ROUTE", "COMPONENT", "HOOK", "STORE", "SERVICE_API", "SERVER", "MODEL_TYPE",
+        # Java
+        "CONTROLLER", "SERVICE", "REPOSITORY", "ENTITY", "DTO",
+        # Universal
+        "UI", "DATA_ACCESS"
+    }
+
+    ROLE_SORT_ORDER = {
+        # Entry / UI / Controllers
+        "SCREEN": 0, "COMPONENT": 0, "PAGE_ROUTE": 0, "ROUTER": 0, "CONTROLLER": 0, "CLI": 0, "UI": 0,
+        # Logic / State / Orchestration
+        "VIEWMODEL": 1, "HOOK": 1, "STORE": 1, "USECASE": 1, "SERVICE": 1, "UISTATE": 1,
+        # Data / Storage
+        "REPOSITORY": 2, "REPO_IMPL": 2, "SERVICE_API": 2, "DAO": 2, "ENTITY": 2, "MODEL": 2, "MODEL_TYPE": 2, "DTO": 2, "DATA_ACCESS": 2,
+        # Background / Tasks
+        "WORKER": 3, "TASK": 3, "SERVER": 3
     }
 
     @staticmethod
@@ -21,17 +46,19 @@ class FlowIdentifier:
         paths = {domain: [] for domain in FlowIdentifier.DOMAINS}
         
         for m in metrics:
+            if m.role not in FlowIdentifier.FLOW_ROLES:
+                continue
+
             path_lower = m.path.lower()
             filename = os.path.basename(m.path)
             
             for domain, keywords in FlowIdentifier.DOMAINS.items():
+                # Avoid trivial matches on generic words like "role" or single letters
                 if any(kw in path_lower for kw in keywords):
-                    # Sirf main components ko flow mein dikhayenge
-                    if m.role in ["VIEWMODEL", "USECASE", "REPOSITORY", "DAO", "SCREEN"]:
-                        paths[domain].append(f"{m.role}: {filename}")
+                    paths[domain].append(f"{m.role}: {filename}")
         
-        # Sirf wahi domains rakho jinke files mili hain
-        return {d: p for d, p in paths.items() if p}
+        # Keep only domains where relevant components exist
+        return {d: list(dict.fromkeys(p)) for d, p in paths.items() if p}
 
     @staticmethod
     def format_report(flow_map: Dict[str, List[str]]) -> str:
@@ -41,20 +68,19 @@ class FlowIdentifier:
         lines.append("=" * 60)
         
         if not flow_map:
-            lines.append("Koi clear business flows nahi mile. File names check karein.")
+            lines.append("No explicit business domain flows identified from component naming.")
             return "\n".join(lines)
 
         for domain, components in flow_map.items():
             lines.append(f"\n🔹 {domain}")
             lines.append("-" * (len(domain) + 3))
             
-            # Logic: VM -> UC -> REPO -> DAO ke order mein sort karna
-            order = {"SCREEN": 0, "VIEWMODEL": 1, "USECASE": 2, "REPOSITORY": 3, "DAO": 4, "BACKEND": 5}
-            sorted_comp = sorted(components, key=lambda x: order.get(x.split(":")[0], 99))
+            # Sort by architectural sequence: Entry -> Logic -> Data
+            sorted_comp = sorted(components, key=lambda x: FlowIdentifier.ROLE_SORT_ORDER.get(x.split(":")[0], 99))
             
             for i, comp in enumerate(sorted_comp):
                 prefix = "   " if i == 0 else "   → "
                 lines.append(f"{prefix}{comp}")
         
-        lines.append("\n[INSIGHT] AI Prompting Tip: In flow groups ko AI ko batayein behtar logic ke liye.")
-        return "\n".join(lines)
+        lines.append("\n[AI GUIDANCE] Feed these sequence flows into LLMs for domain-accurate feature additions and refactoring.")
+        return "\n".join(lines)

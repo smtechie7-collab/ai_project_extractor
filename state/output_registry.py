@@ -1,5 +1,13 @@
 import os
+import re
 import zipfile
+
+def _safe_filename(phase: str) -> str:
+    # Strip illegal filesystem characters: \ / : * ? " < > | and emojis
+    s = re.sub(r'[\\/*?:"<>|]', '', phase)
+    s = re.sub(r'[^\w\s-]', '', s)
+    s = s.strip().lower().replace(" ", "_")
+    return s or "output"
 
 class OutputRegistry:
     _outputs = {}
@@ -12,7 +20,6 @@ class OutputRegistry:
     def add(cls, phase, content):
         cls._outputs[phase] = content
 
-    # 🔥 FIX: Added missing 'get' method
     @classmethod
     def get(cls, phase):
         return cls._outputs.get(phase, "")
@@ -22,8 +29,7 @@ class OutputRegistry:
         if phase not in cls._outputs:
             return
 
-        # Sanitize filename
-        safe_name = phase.lower().replace(" ", "_").replace("(", "").replace(")", "")
+        safe_name = _safe_filename(phase)
         path = os.path.join(folder, f"{safe_name}.txt")
 
         with open(path, "w", encoding="utf-8") as f:
@@ -32,7 +38,7 @@ class OutputRegistry:
     @classmethod
     def export_all(cls, folder):
         for phase, content in cls._outputs.items():
-            safe_name = phase.lower().replace(" ", "_").replace("(", "").replace(")", "")
+            safe_name = _safe_filename(phase)
             path = os.path.join(folder, f"{safe_name}.txt")
             with open(path, "w", encoding="utf-8") as f:
                 f.write(content)
@@ -43,7 +49,7 @@ class OutputRegistry:
         with open(path, "w", encoding="utf-8") as f:
             f.write("# AI Project Context\n\n")
             for phase, content in cls._outputs.items():
-                f.write(f"## {phase}\n")
+                f.write(f"## {phase}\n\n")
                 f.write("```text\n")
                 f.write(content)
                 f.write("\n```\n\n")
@@ -52,5 +58,5 @@ class OutputRegistry:
     def export_zip(cls, zip_path):
         with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
             for phase, content in cls._outputs.items():
-                safe_name = phase.lower().replace(" ", "_").replace("(", "").replace(")", "") + ".txt"
-                zipf.writestr(safe_name, content)
+                safe_name = f"{_safe_filename(phase)}.txt"
+                zipf.writestr(safe_name, content)

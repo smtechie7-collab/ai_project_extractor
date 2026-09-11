@@ -1,4 +1,3 @@
-# Is file ko update karein taaki Python ke buttons UI mein show hon
 LANGUAGE_PHASES = {
     "kotlin": [
         "Structure",
@@ -6,28 +5,76 @@ LANGUAGE_PHASES = {
         "Critical Business Flows",
         "Dependency Explosion Audit",
         "Module Classification",
+        "Full Source (AI)",
+        "Constitution & Architecture Specs",
+        "Cloud Sync & Outbox Engine Audit",
+        "Data Flow Tracer",
         "Database Schema",
         "Visual Architecture (Mermaid)",
+        "Call Graph",
+        "Navigation Graph",
+        "DI Graph",
+        "UI Map",
         "Risk Analysis",
+        "AI Prompt",
         "Executive Summary 2.0"
     ],
     "python": [
         "Structure",
-        "Architecture Heatmap",        # Intelligence Enabled
-        "Critical Business Flows",     # Intelligence Enabled
-        "Dependency Explosion Audit",  # Intelligence Enabled
-        "Module Classification",       # Deep Extraction Fixed
-        "Full Source (AI)",            # Deep Extraction Fixed
-        "Call Graph",                  # Deep Extraction Fixed
-        "Risk Analysis",               # Deep Extraction Fixed
-        "Executive Summary 2.0",       # New Audit Summary
-        "AI Prompt"
+        "Architecture Heatmap",
+        "Critical Business Flows",
+        "Dependency Explosion Audit",
+        "Module Classification",
+        "Full Source (AI)",
+        "Call Graph",
+        "Risk Analysis",
+        "AI Prompt",
+        "Executive Summary 2.0"
     ],
     "javascript": [
         "Structure",
         "Architecture Heatmap",
+        "Critical Business Flows",
+        "Dependency Explosion Audit",
         "Module Classification",
+        "Full Source (AI)",
+        "Firestore & Backend Schema",
+        "Web UI & DOM Map",
+        "Hardware & Service Integrations",
+        "Architecture & Spec Digest",
+        "Dependency Graph",
         "Risk Analysis",
+        "AI Prompt",
+        "Executive Summary 2.0"
+    ],
+    "java": [
+        "Structure",
+        "Architecture Heatmap",
+        "Critical Business Flows",
+        "Dependency Explosion Audit",
+        "Module Classification",
+        "Full Source (AI)",
+        "Call Graph",
+        "Risk Analysis",
+        "AI Prompt",
+        "Executive Summary 2.0"
+    ],
+    "cpp": [
+        "Structure",
+        "Architecture Heatmap",
+        "Module Classification",
+        "Full Source (AI)",
+        "Risk Analysis",
+        "AI Prompt",
+        "Executive Summary 2.0"
+    ],
+    "all": [
+        "Structure",
+        "Architecture Heatmap",
+        "Module Classification",
+        "Full Source (AI)",
+        "Risk Analysis",
+        "AI Prompt",
         "Executive Summary 2.0"
     ]
-}
+}

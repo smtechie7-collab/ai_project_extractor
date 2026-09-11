@@ -1,27 +1,27 @@
 LANGUAGE_PROFILES = {
     "kotlin": {
         "display": "Kotlin / Android",
-        "extensions": [".kt"],
+        "extensions": [".kt", ".kts", ".xml", ".gradle", ".gradle.kts", ".md", ".json"],
         "domain_aware": True,
     },
     "java": {
         "display": "Java",
-        "extensions": [".java"],
+        "extensions": [".java", ".xml"],
         "domain_aware": True,
     },
     "python": {
         "display": "Python",
-        "extensions": [".py"],
-        "domain_aware": False,
+        "extensions": [".py", ".pyi"],
+        "domain_aware": True,
     },
     "javascript": {
-        "display": "JavaScript / TypeScript",
-        "extensions": [".js", ".ts"],
-        "domain_aware": False,
+        "display": "JavaScript / Web Portal / PWA",
+        "extensions": [".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".json", ".html", ".htm", ".css", ".webmanifest", ".md"],
+        "domain_aware": True,
     },
     "cpp": {
         "display": "C / C++",
-        "extensions": [".c", ".cpp", ".h", ".hpp"],
+        "extensions": [".c", ".cpp", ".cc", ".cxx", ".h", ".hpp", ".hh", ".hxx"],
         "domain_aware": False,
     },
     "all": {
