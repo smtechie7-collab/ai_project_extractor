@@ -17,7 +17,11 @@ class ActionBar(QWidget):
         export_selected_cb,
         export_all_cb,
         export_zip_cb,
-        git_toggle_cb=None
+        git_toggle_cb=None,
+        merge_files_cb=None,
+        merge_folder_cb=None,
+        merge_project_cb=None,
+        export_markdown_cb=None
     ):
         super().__init__()
 
@@ -34,6 +38,22 @@ class ActionBar(QWidget):
         self.project_btn.setFixedHeight(34)
         self.project_btn.setCursor(QCursor(Qt.PointingHandCursor))
         self.project_btn.clicked.connect(select_project_cb)
+
+        # ---------- Merge MD Files Button ----------
+        self.merge_md_btn = QPushButton("📑  Merge MD")
+        self.merge_md_btn.setObjectName("actionMergeMdBtn")
+        self.merge_md_btn.setFixedHeight(34)
+        self.merge_md_btn.setCursor(QCursor(Qt.PointingHandCursor))
+        self.merge_md_btn.setToolTip("Combine multiple markdown (.md) files into a single full source document")
+
+        md_menu = QMenu(self)
+        if merge_files_cb:
+            md_menu.addAction("📄 Select .md Files from Disk...", merge_files_cb)
+        if merge_folder_cb:
+            md_menu.addAction("📁 Select Folder with .md Files...", merge_folder_cb)
+        if merge_project_cb:
+            self.action_merge_project = md_menu.addAction("⚡ Combine Current Project .md Files", merge_project_cb)
+        self.merge_md_btn.setMenu(md_menu)
 
         # ---------- Git Filter Checkbox ----------
         self.git_check = QCheckBox("Git Diff Only")
@@ -72,12 +92,15 @@ class ActionBar(QWidget):
         menu = QMenu(self)
         menu.addAction("📄 Export Active View (.txt)", export_selected_cb)
         menu.addAction("📑 Export All Phase Reports", export_all_cb)
+        if export_markdown_cb:
+            menu.addAction("📖 Export Project Context (.md)", export_markdown_cb)
         menu.addSeparator()
         menu.addAction("📦 Export Full Project Archive (.zip)", export_zip_cb)
         self.export_btn.setMenu(menu)
 
         # Assemble layout
         layout.addWidget(self.project_btn)
+        layout.addWidget(self.merge_md_btn)
         layout.addWidget(self.git_check)
         layout.addSpacing(6)
         

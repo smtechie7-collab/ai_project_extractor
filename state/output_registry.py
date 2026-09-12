@@ -55,8 +55,13 @@ class OutputRegistry:
                 f.write("\n```\n\n")
 
     @classmethod
+    def export_single_markdown(cls, file_path, content):
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(content)
+
+    @classmethod
     def export_zip(cls, zip_path):
         with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
             for phase, content in cls._outputs.items():
                 safe_name = f"{_safe_filename(phase)}.txt"
-                zipf.writestr(safe_name, content)
+                zipf.writestr(safe_name, content)
