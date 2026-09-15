@@ -1,45 +1,86 @@
-from state.output_registry import OutputRegistry
+"""
+core/summary/executive_summary.py
+=================================
+Unified project architectural audit, maturity score, and executive summary builder.
+"""
+
+from __future__ import annotations
+
+from typing import Any
 
 
-def build_executive_summary(project_name: str, language: str) -> str:
-    outputs = OutputRegistry.all()
+class ExecutiveSummary:
+    """
+    High-level project maturity score, architectural blueprint, and AI readiness audit.
+    Dynamically adapts component blueprints and AI optimization tips to the active language ecosystem.
+    """
 
-    lines = []
-    lines.append("=" * 40)
-    lines.append("EXECUTIVE PROJECT SUMMARY")
-    lines.append("=" * 40)
-    lines.append("")
-    lines.append(f"Project       : {project_name}")
-    lines.append(f"Language      : {language}")
-    lines.append(f"Phases Run    : {len(outputs)}")
-    lines.append("")
+    @staticmethod
+    def build(project_name: str, metrics: list[Any], violations: list[str], stats: Any = None) -> str:
+        avg_risk = sum(m.risk_score for m in metrics) / len(metrics) if metrics else 0
+        maturity_score = max(0, 100 - avg_risk)
 
-    for phase, content in outputs.items():
-        size = len(content.splitlines())
-        lines.append(f"- {phase}: {size} lines extracted")
+        lines = []
+        lines.append("🚀 AI CONTEXT ARCHITECTURAL AUDIT")
+        lines.append("=" * 60)
+        lines.append(f"PROJECT        : {project_name.upper()}")
+        lang = getattr(stats, "language", "general").upper() if stats else "GENERAL"
+        lines.append(f"ECOSYSTEM      : {lang}")
+        lines.append(f"MATURITY SCORE : {maturity_score:.1f}/100")
 
-    lines.append("")
-    lines.append("ARCHITECTURAL NOTES")
-    lines.append("-" * 40)
+        status = "HEALTHY" if maturity_score > 80 else "NEEDS REFACTOR" if maturity_score > 60 else "CRITICAL"
+        lines.append(f"SYSTEM STATUS  : {status}")
+        lines.append("-" * 60)
 
-    if language == "kotlin":
-        lines.append("• Android / Kotlin project detected")
-        if "DI Graph" in outputs:
-            lines.append("• Dependency Injection present")
-        if "UI Map" in outputs:
-            lines.append("• UI layer mapped (Compose / XML)")
-        if "Risk Analysis" in outputs:
-            lines.append("• Risk analysis performed")
+        if stats and getattr(stats, "counts", None):
+            lines.append("\n🏗️ PROJECT ARCHITECTURAL BLUEPRINT")
+            lines.append(f"{'COMPONENT':<18} | {'COUNT':<6} | {'STATUS'}")
+            lines.append("-" * 42)
+            for role, count in stats.counts.items():
+                if role == "OTHER" and count == 0:
+                    continue
+                indicator = "✅ PRESENT" if count > 0 else "⚪ NONE"
+                lines.append(f"{role:<18} | {count:<6} | {indicator}")
 
-    if language == "python":
-        lines.append("• Python backend project")
-        lines.append("• Module-wise source code extracted")
+            lines.append(f"\nTotal Source Lines: {getattr(stats, 'total_lines', 0)} across {len(metrics)} files")
 
-    lines.append("")
-    lines.append("RECOMMENDED NEXT STEPS")
-    lines.append("-" * 40)
-    lines.append("• Review risk findings")
-    lines.append("• Share module exports with AI for refactoring")
-    lines.append("• Use graphs to validate architecture")
+        lines.append("\n🚩 ARCHITECTURAL HEALTH & RISK FINDINGS")
+        if not violations:
+            lines.append("• Structure: Clean architecture detected with modular separation.")
+        else:
+            for v in violations[:10]:
+                lines.append(f"• {v}")
+            if len(violations) > 10:
+                lines.append(f"• ... and {len(violations) - 10} additional warnings in detailed reports.")
 
-    return "\n".join(lines)
+        lines.append("\n💡 AI OPTIMIZATION & WORKFLOW GUIDANCE")
+        lang_lower = lang.lower()
+        if "python" in lang_lower:
+            lines.append("- AI Prompting: Provide ROUTER and MODEL definitions to AI first when designing new endpoints.")
+            lines.append("- Refactoring: Check the AST Call Graph to trace function invocations across services.")
+            if any("bare except" in str(v).lower() for v in violations):
+                lines.append("- Caution: Address bare exception handlers flagged in Risk Analysis to avoid suppressed bugs.")
+        elif "javascript" in lang_lower or "ts" in lang_lower:
+            if stats and getattr(stats, "counts", {}).get("FEATURE_MODULE", 0) > 0:
+                lines.append("- Vanilla JS Architecture: Modular feature architecture detected. Feed FEATURE_MODULE + STORE to AI for UI enhancements.")
+            elif stats and getattr(stats, "counts", {}).get("COMPONENT", 0) > 0:
+                lines.append("- Component Architecture: Provide STORE (state) and COMPONENT definitions together for UI bug fixes.")
+            if stats and getattr(stats, "counts", {}).get("SPEC_DOC", 0) > 0:
+                lines.append("- Specifications: Reference SPEC_DOC contracts for Firestore schema, data parity, and peripheral hardware rules.")
+            lines.append("- Modernization: Review CommonJS require() and TypeScript 'any' occurrences in Risk Analysis.")
+        elif "kotlin" in lang_lower:
+            if stats and getattr(stats, "counts", {}).get("UISTATE", 0) == 0:
+                lines.append("- Note: No dedicated UIState classes found; check ViewModel state flows.")
+            lines.append("- Database & Flow: Reference Room Schema and Data Flow Tracer outputs for backend-aligned features.")
+        else:
+            lines.append("- AI Prompting: Include module classification and interface definitions for accurate context.")
+
+        lines.append("\n" + "=" * 60)
+        lines.append("Generated by AI Context Extractor")
+        lines.append("=" * 60)
+
+        return "\n".join(lines)
+
+
+# Backward compatibility
+ExecutiveSummaryV2 = ExecutiveSummary

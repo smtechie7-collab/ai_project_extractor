@@ -1,7 +1,8 @@
-import os
 import ast
+import os
 import re
 from collections import defaultdict
+
 from core.utils.file_reader import read_text_file
 from state.app_state import AppState
 
@@ -108,7 +109,7 @@ def export_python_call_graph(tree_root):
 
     for file in sorted(set(list(calls.keys()) + list(defined_summary.keys()))):
         lines.append(f"FILE: {file}")
-        
+
         # Display classes & methods defined in file
         if file in defined_summary:
             for cls_name, methods in sorted(defined_summary[file].items()):

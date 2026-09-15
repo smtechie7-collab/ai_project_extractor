@@ -1,6 +1,7 @@
 import os
 import re
 from collections import defaultdict
+
 from core.utils.file_reader import read_text_file
 from state.app_state import AppState
 
@@ -50,7 +51,7 @@ def export_js_ts_dependency_graph(tree_root):
 
     for file, data in sorted(deps.items()):
         lines.append(f"FILE: {file}")
-        
+
         if data["external"]:
             lines.append("  📦 External Packages:")
             for ext in sorted(data["external"]):

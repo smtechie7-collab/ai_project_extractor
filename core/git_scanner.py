@@ -1,5 +1,6 @@
-import subprocess
 import os
+import subprocess
+
 
 class GitScanner:
     @staticmethod
@@ -7,37 +8,48 @@ class GitScanner:
         return os.path.exists(os.path.join(path, ".git"))
 
     @staticmethod
-    def get_changed_files(repo_root):
+    def get_changed_files(repo_root: str) -> set[str]:
         """
-        Returns a set of absolute paths for:
-        1. Unstaged changes (modified)
-        2. Staged changes (added/modified)
-        3. Untracked files (newly created)
+        Returns a set of normalized absolute paths for:
+        1. Unstaged changes (modified/deleted/added)
+        2. Staged changes (staged in index)
+        3. Untracked files (new files)
+
+        Uses `git status --porcelain=v1 -z -uall` for binary-safe,
+        unicode-safe, space-safe change detection in a single command.
         """
-        try:
-            # 1. Unstaged Changes
-            cmd_unstaged = ["git", "diff", "--name-only"]
-            out_unstaged = subprocess.check_output(cmd_unstaged, cwd=repo_root).decode().splitlines()
-
-            # 2. Staged Changes (Ready to commit)
-            cmd_staged = ["git", "diff", "--name-only", "--cached"]
-            out_staged = subprocess.check_output(cmd_staged, cwd=repo_root).decode().splitlines()
-
-            # 3. Untracked Files (New files not yet added)
-            cmd_untracked = ["git", "ls-files", "--others", "--exclude-standard"]
-            out_untracked = subprocess.check_output(cmd_untracked, cwd=repo_root).decode().splitlines()
-
-            # Combine all
-            all_files = set(out_unstaged + out_staged + out_untracked)
-            
-            # Convert to absolute paths and normalize separators
-            abs_files = set()
-            for f in all_files:
-                full_path = os.path.join(repo_root, f).replace("/", os.sep)
-                abs_files.add(full_path)
-                
-            return abs_files
-
-        except Exception as e:
-            print(f"Git Scan Error: {e}")
+        if not GitScanner.is_git_repo(repo_root):
             return set()
+
+        try:
+            raw = subprocess.check_output(
+                ["git", "status", "--porcelain=v1", "-z", "-uall"],
+                cwd=repo_root,
+                stderr=subprocess.DEVNULL,
+            )
+        except (subprocess.CalledProcessError, FileNotFoundError, PermissionError):
+            return set()
+
+        abs_files: set[str] = set()
+        parts = raw.split(b"\0")
+        i = 0
+        while i < len(parts):
+            entry = parts[i]
+            if not entry:
+                i += 1
+                continue
+
+            if len(entry) >= 3:
+                status = entry[:2].decode("latin-1", errors="ignore")
+                rel_path = entry[3:].decode("utf-8", errors="replace")
+
+                # If rename or copy (status R or C), next entry is the original path
+                if status[0] in ("R", "C") or status[1] in ("R", "C"):
+                    i += 1
+
+                full_path = os.path.normpath(os.path.join(repo_root, rel_path))
+                if os.path.exists(full_path) and os.path.isfile(full_path):
+                    abs_files.add(full_path)
+            i += 1
+
+        return abs_files

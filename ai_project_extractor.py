@@ -1,56 +1,41 @@
+"""
+ai_project_extractor.py
+=======================
+Application entry point.
+
+This module intentionally performs NO dependency installation at runtime. If a
+required dependency is missing it reports the problem and how to fix it, then
+exits cleanly. (Previous versions silently ran `pip install PySide6` and restarted
+the process via `os.execv`, which mutates the host environment and is blocked or
+flagged in many corporate/offline environments.)
+"""
+
+from __future__ import annotations
+
 import sys
-import subprocess
-import os
 
-# ============================================================
-# AUTO INSTALLER
-# ============================================================
+# ── Dependency check (no auto-install) ──
+try:
+    import PySide6  # noqa: F401
+except ModuleNotFoundError:
+    print(
+        "\n[FATAL] PySide6 is not installed.\n\n"
+        "Install the project dependencies first:\n\n"
+        "    python -m pip install -r requirements.txt\n\n"
+        "or install just PySide6:\n\n"
+        "    python -m pip install PySide6\n",
+        file=sys.stderr,
+    )
+    sys.exit(1)
 
-def ensure_pyside6():
-    try:
-        import PySide6  # noqa
-        return
-    except ModuleNotFoundError:
-        print("\n[BOOTSTRAP] PySide6 not found.")
-        print("[BOOTSTRAP] Installing PySide6 automatically...\n")
 
-        try:
-            subprocess.check_call([
-                sys.executable,
-                "-m",
-                "pip",
-                "install",
-                "--upgrade",
-                "pip"
-            ])
-
-            subprocess.check_call([
-                sys.executable,
-                "-m",
-                "pip",
-                "install",
-                "PySide6"
-            ])
-        except Exception as e:
-            print("\n[FATAL] Automatic install failed.")
-            print("Reason:", e)
-            print("\nRun this manually:")
-            print("  python -m pip install PySide6")
-            sys.exit(1)
-
-        print("\n[BOOTSTRAP] PySide6 installed successfully.")
-        print("[BOOTSTRAP] Restarting application...\n")
-
-        os.execv(sys.executable, [sys.executable] + sys.argv)
-
-# ============================================================
-# ENTRY
-# ============================================================
-
-def main():
-    ensure_pyside6()
+def main() -> int:
+    from core.logging_setup import get_logger, setup_logging
+    setup_logging()
+    logger = get_logger("aice.main")
 
     from PySide6.QtWidgets import QApplication
+
     from ui.main_window import MainWindow
     from ui.theme_manager import ThemeManager
 
@@ -58,13 +43,14 @@ def main():
 
     try:
         ThemeManager.load()
-    except Exception as e:
-        print("[WARN] Theme load failed:", e)
+    except Exception as exc:  # noqa: BLE001 - theme failure must never block startup
+        logger.warning(f"Theme load failed: {exc}")
 
     window = MainWindow()
     window.show()
 
-    sys.exit(app.exec())
+    return app.exec()
+
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

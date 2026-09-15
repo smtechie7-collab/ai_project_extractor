@@ -1,10 +1,11 @@
 import os
 
+
 class DependencyAlert:
     """
     Detects 'Dependency Explosion' and excessive coupling across components.
     """
-    
+
     # Safe limits for imported dependencies per architectural role
     LIMITS = {
         # Kotlin / Android
@@ -35,7 +36,7 @@ class DependencyAlert:
     @staticmethod
     def analyze(metrics) -> str:
         alerts = []
-        
+
         for m in metrics:
             limit = DependencyAlert.LIMITS.get(m.role, 12)
             if m.dependency_count > limit:
@@ -57,5 +58,5 @@ class DependencyAlert:
             lines.append(f"   Coupling: {a['count']} dependencies (Threshold: {a['limit']})")
             if a["severity"] == "CRITICAL":
                 lines.append("   Recommendation: High fan-out detected. Consider splitting this into smaller focused units.")
-        
+
         return "\n".join(lines)

@@ -1,7 +1,8 @@
 import os
 from collections import defaultdict
-from core.utils.file_reader import read_text_file
+
 from core.extractors.kotlin.role_classifier import classify_kotlin_role
+from core.utils.file_reader import read_text_file
 from state.app_state import AppState
 
 

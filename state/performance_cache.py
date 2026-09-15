@@ -1,6 +1,6 @@
-import os
 import hashlib
 import json
+import os
 
 CACHE_FILE = ".analysis_cache.json"
 
@@ -12,7 +12,7 @@ class PerformanceCache:
 
     def _load(self):
         if os.path.exists(self.path):
-            with open(self.path, "r", encoding="utf-8") as f:
+            with open(self.path, encoding="utf-8") as f:
                 return json.load(f)
         return {}
 

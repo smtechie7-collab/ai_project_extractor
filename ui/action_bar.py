@@ -1,13 +1,11 @@
-from PySide6.QtWidgets import (
-    QWidget, QHBoxLayout, QPushButton, QComboBox,
-    QLabel, QMenu, QCheckBox
-)
 from PySide6.QtCore import QSettings, Qt
 from PySide6.QtGui import QCursor
-from state.app_state import AppState
-from core.language_registry import LANGUAGE_PROFILES
-from ui.theme_manager import ThemeManager
+from PySide6.QtWidgets import QCheckBox, QComboBox, QHBoxLayout, QLabel, QMenu, QPushButton, QWidget
+
 from core.git_scanner import GitScanner
+from core.language_registry import LANGUAGE_PROFILES
+from state.app_state import AppState
+from ui.theme_manager import ThemeManager
 
 
 class ActionBar(QWidget):
@@ -103,11 +101,11 @@ class ActionBar(QWidget):
         layout.addWidget(self.merge_md_btn)
         layout.addWidget(self.git_check)
         layout.addSpacing(6)
-        
+
         lbl_lang = QLabel("Language:")
         layout.addWidget(lbl_lang)
         layout.addWidget(self.language_combo)
-        
+
         layout.addWidget(self.theme_combo)
         layout.addStretch(1)
         layout.addWidget(self.export_btn)

@@ -1,4 +1,3 @@
-import re
 
 COUPLING_KEYWORDS = [
     ("sales", "inventory"),

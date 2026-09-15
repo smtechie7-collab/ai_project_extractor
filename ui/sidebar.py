@@ -1,8 +1,6 @@
-from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QLabel, QListWidget, QListWidgetItem, QHBoxLayout
-)
-from PySide6.QtCore import Signal, Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QListWidget, QListWidgetItem, QVBoxLayout, QWidget
 
 
 class PhaseSidebar(QWidget):
@@ -21,7 +19,7 @@ class PhaseSidebar(QWidget):
         header = QWidget()
         header.setObjectName("sidebarHeader")
         header.setFixedHeight(46)
-        
+
         h_layout = QHBoxLayout(header)
         h_layout.setContentsMargins(16, 0, 16, 0)
 
@@ -66,6 +64,27 @@ class PhaseSidebar(QWidget):
             item = self.list_widget.item(i)
             if item.data(Qt.UserRole) == phase:
                 item.setText(f"✔  {phase}")
+                break
+
+    def mark_phase_failed(self, phase: str):
+        for i in range(self.list_widget.count()):
+            item = self.list_widget.item(i)
+            if item.data(Qt.UserRole) == phase:
+                item.setText(f"❌  {phase}")
+                break
+
+    def mark_all_done(self):
+        for i in range(self.list_widget.count()):
+            item = self.list_widget.item(i)
+            phase = item.data(Qt.UserRole)
+            if not item.text().startswith("❌"):
+                item.setText(f"✔  {phase}")
+
+    def select_phase(self, phase: str):
+        for i in range(self.list_widget.count()):
+            item = self.list_widget.item(i)
+            if item.data(Qt.UserRole) == phase:
+                self.list_widget.setCurrentItem(item)
                 break
 
     def reset_status(self):

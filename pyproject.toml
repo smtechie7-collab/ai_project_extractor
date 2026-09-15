@@ -1,0 +1,86 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ai-context-extractor"
+version = "2.4.0"
+description = "Bridge the gap between your local codebase and AI coding assistants."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+authors = [{ name = "AI Context Extractor contributors" }]
+keywords = ["static-analysis", "llm", "context", "kotlin", "android", "python", "javascript"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: X11 Applications :: Qt",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Quality Assurance",
+]
+dependencies = [
+    "PySide6>=6.6,<7",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-qt>=4.4",
+    "coverage[toml]>=7.6",
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "vulture>=2.11",
+    "bandit>=1.7",
+    "pip-audit>=2.7",
+]
+
+[project.scripts]
+aice = "ai_project_extractor:main"
+
+[project.urls]
+Homepage = "https://github.com/smtechie7-collab/ai_project_extractor"
+Issues = "https://github.com/smtechie7-collab/ai_project_extractor/issues"
+
+# --- Packaging: repository currently uses a flat layout (namespace packages) ---
+[tool.setuptools]
+py-modules = ["ai_project_extractor", "app_meta"]
+
+[tool.setuptools.packages.find]
+include = ["core*", "ui*", "state*", "models*", "exporters*", "rules*", "packages*"]
+namespaces = true
+
+# --- Lint / format (Phase 3 gate) ---
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+exclude = ["__pycache__", ".vs", ".git", "build", "dist"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM"]
+
+[tool.ruff.lint.per-file-ignores]
+"ui/*" = ["E501"]
+
+# --- Type checking (Phase 2 gate: strict on core, relaxed on UI) ---
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = ["ui.*"]
+disallow_untyped_defs = false
+
+# --- Tests ---
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+qt_api = "pyside6"
+
+[tool.coverage.run]
+source = ["core", "state", "models"]
+branch = true

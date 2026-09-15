@@ -1,7 +1,7 @@
 import os
 from collections import defaultdict
-from state.app_state import AppState
 
+from state.app_state import AppState
 
 CATEGORIES = {
     "routes & api": ["route", "router", "api", "view", "endpoint", "controller"],

@@ -1,6 +1,7 @@
 import os
 import re
 from collections import defaultdict
+
 from core.utils.file_reader import read_text_file
 from state.app_state import AppState
 
@@ -42,7 +43,7 @@ def export_kotlin_ui_map(tree_root):
 
             if screens:
                 has_gate = bool(FEATURE_GATE_PATTERN.search(code))
-                
+
                 # Determine feature grouping
                 parts = rel_p.replace("\\", "/").split("/")
                 feature_name = "Core UI"

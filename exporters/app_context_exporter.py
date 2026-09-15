@@ -1,6 +1,7 @@
 import os
-from core.entry_extractor import detect_entry_files
+
 from core.di_extractor import detect_di_files
+from core.entry_extractor import detect_entry_files
 
 
 def export_app_context(tree_root, project_root):

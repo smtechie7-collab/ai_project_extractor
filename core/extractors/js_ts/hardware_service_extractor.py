@@ -1,6 +1,7 @@
-import re
 import os
+import re
 from collections import defaultdict
+
 from core.utils.file_reader import read_text_file
 from state.app_state import AppState
 

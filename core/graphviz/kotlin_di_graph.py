@@ -1,4 +1,3 @@
-import os
 from core.utils.file_reader import read_text_file
 
 

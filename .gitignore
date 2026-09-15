@@ -205,3 +205,25 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# ─────────────────────────────────────────────────────────────
+# AI Context Extractor — project specific
+# ─────────────────────────────────────────────────────────────
+
+# Visual Studio / MSBuild editor-local state (this is a Python project)
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.vsidx
+*.vspscc
+*.vssscc
+*.VC.db
+
+# Analysis runtime cache (written into analyzed projects)
+.analysis_cache.json
+.aice_cache.json
+
+# Packaging artifacts
+*.spec.bak

@@ -14,7 +14,7 @@ def detect_layer_violations(tree_root):
             path_lower = node.path.lower()
 
             try:
-                with open(node.path, "r", encoding="utf-8", errors="ignore") as f:
+                with open(node.path, encoding="utf-8", errors="ignore") as f:
                     content = f.read()
             except Exception:
                 return

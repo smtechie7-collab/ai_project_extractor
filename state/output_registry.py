@@ -2,6 +2,7 @@ import os
 import re
 import zipfile
 
+
 def _safe_filename(phase: str) -> str:
     # Strip illegal filesystem characters: \ / : * ? " < > | and emojis
     s = re.sub(r'[\\/*?:"<>|]', '', phase)

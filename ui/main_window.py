@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 ui/main_window.py
 =================
@@ -8,110 +7,132 @@ Includes multi-threaded Feature Filter Extraction with an increased file safety 
 
 import os
 import sys
-import base64
 import traceback
 
 # PySide6 components safely wrapped
 try:
-    from PySide6.QtWidgets import (
-        QApplication, QMainWindow, QWidget, QVBoxLayout, QSplitter,
-        QFileDialog, QMessageBox, QLabel, QStatusBar, 
-        QHBoxLayout, QFrame, QProgressBar, QDialog, QPushButton
+    from PySide6.QtCore import QSettings, QSize, Qt, QThread, QTimer, QUrl, Signal, Slot
+    from PySide6.QtGui import (
+        QColor,
+        QCursor,
+        QDesktopServices,
+        QDragEnterEvent,
+        QDropEvent,
+        QFont,
+        QIcon,
+        QPalette,
+        QPixmap,
     )
-    from PySide6.QtCore import Qt, QSettings, Signal, Slot, QSize, QTimer, QUrl, QThread
-    from PySide6.QtGui import QDragEnterEvent, QDropEvent, QIcon, QFont, QColor, QPalette, QPixmap, QDesktopServices, QCursor
+    from PySide6.QtWidgets import (
+        QApplication,
+        QDialog,
+        QFileDialog,
+        QFrame,
+        QHBoxLayout,
+        QLabel,
+        QMainWindow,
+        QMessageBox,
+        QProgressBar,
+        QPushButton,
+        QSplitter,
+        QStatusBar,
+        QVBoxLayout,
+        QWidget,
+    )
 except ModuleNotFoundError:
     print("PySide6 missing. Run: pip install PySide6")
     sys.exit(1)
 
 # --- CORE LOGIC MODULES ---
 try:
-    from core.intelligence.role_auditor import RoleAuditor
-    from core.intelligence.heatmap_generator import RiskHeatmap
-    from core.intelligence.flow_identifier import FlowIdentifier
-    from core.intelligence.dependency_alert import DependencyAlert
-    from core.summary.executive_summary_v2 import ExecutiveSummaryV2
-    from core.scanner import scan_directory
-    from core.structure_builder import build_tree_text
-    from core.language_profiles import LANGUAGE_PHASES
+    import app_meta
     from core.ai.prompt_generator import generate_ai_prompt
-    from core.git_scanner import GitScanner
     from core.extractors.feature_filter_extractor import FeatureFilterExtractor
-    from core.extractors.markdown_merger import (
-        scan_markdown_files, collect_markdown_from_tree, merge_markdown_files
-    )
-    
-    # UI Helpers
-    from ui.sidebar import PhaseSidebar
-    from ui.workspace import Workspace
-    from ui.action_bar import ActionBar
-    from ui.worker import AnalysisWorker
-    from ui.theme_manager import ThemeManager
-    from state.app_state import AppState
-    from state.output_registry import OutputRegistry
+    from core.extractors.generic.ai_code_exporter import export_generic_ai_code
+    from core.extractors.generic.call_graph import export_generic_call_graph
+
+    # --- GENERIC / C++ / MULTI-LANGUAGE EXTRACTORS ---
+    from core.extractors.generic.code_exporter import export_generic_modules
+    from core.extractors.generic.risk_analyzer import analyze_generic_risks
+    from core.extractors.js_ts.dependency_graph import export_js_ts_dependency_graph
+    from core.extractors.js_ts.firestore_schema_extractor import extract_firestore_schema
+    from core.extractors.js_ts.hardware_service_extractor import extract_hardware_services
+
+    # --- JAVASCRIPT / TYPESCRIPT / WEB PORTAL EXTRACTORS ---
+    from core.extractors.js_ts.module_exporter import export_js_ts_ai_code, export_js_ts_modules
+    from core.extractors.js_ts.risk_analyzer import analyze_js_ts_risks
+    from core.extractors.js_ts.spec_digest_extractor import extract_spec_digest
+    from core.extractors.js_ts.web_dom_map_extractor import extract_web_dom_map
+    from core.extractors.kotlin.call_graph import export_kotlin_call_graph
+
+    # --- KOTLIN EXTRACTORS ---
+    from core.extractors.kotlin.code_exporter import export_kotlin_module_classification, export_kotlin_modules
+    from core.extractors.kotlin.constitution_digest_extractor import extract_constitution_digest
+    from core.extractors.kotlin.data_flow_extractor import extract_data_flow
+    from core.extractors.kotlin.di_graph_exporter import export_kotlin_di_graph
+    from core.extractors.kotlin.mermaid_visualizer import generate_mermaid_visuals
+    from core.extractors.kotlin.navigation_graph import export_kotlin_navigation_graph
+    from core.extractors.kotlin.risk_analyzer import analyze_kotlin_risks
+    from core.extractors.kotlin.room_schema_extractor import extract_room_schema
+    from core.extractors.kotlin.sync_outbox_auditor import audit_sync_outbox
+    from core.extractors.kotlin.ui_map_exporter import export_kotlin_ui_map
+    from core.extractors.markdown_merger import collect_markdown_from_tree, merge_markdown_files, scan_markdown_files
+    from core.extractors.python.ai_code_exporter import export_python_ai_code
+    from core.extractors.python.call_graph import export_python_call_graph
 
     # --- PYTHON EXTRACTORS ---
     from core.extractors.python.code_exporter import export_python_modules
-    from core.extractors.python.ai_code_exporter import export_python_ai_code
-    from core.extractors.python.call_graph import export_python_call_graph
     from core.extractors.python.risk_analyzer import analyze_python_risks
+    from core.git_scanner import GitScanner
+    from core.intelligence.dependency_alert import DependencyAlert
+    from core.intelligence.flow_identifier import FlowIdentifier
+    from core.intelligence.heatmap_generator import RiskHeatmap
+    from core.intelligence.role_auditor import RoleAuditor
+    from core.language_profiles import LANGUAGE_PHASES
+    from core.scanner import scan_directory
+    from core.structure_builder import build_tree_text
+    from core.summary.executive_summary_v2 import ExecutiveSummaryV2
+    from state.app_state import AppState
+    from state.output_registry import OutputRegistry
+    from ui.action_bar import ActionBar
 
-    # --- JAVASCRIPT / TYPESCRIPT / WEB PORTAL EXTRACTORS ---
-    from core.extractors.js_ts.module_exporter import export_js_ts_modules, export_js_ts_ai_code
-    from core.extractors.js_ts.dependency_graph import export_js_ts_dependency_graph
-    from core.extractors.js_ts.risk_analyzer import analyze_js_ts_risks
-    from core.extractors.js_ts.firestore_schema_extractor import extract_firestore_schema
-    from core.extractors.js_ts.web_dom_map_extractor import extract_web_dom_map
-    from core.extractors.js_ts.hardware_service_extractor import extract_hardware_services
-    from core.extractors.js_ts.spec_digest_extractor import extract_spec_digest
-
-    # --- KOTLIN EXTRACTORS ---
-    from core.extractors.kotlin.code_exporter import export_kotlin_modules, export_kotlin_module_classification
-    from core.extractors.kotlin.constitution_digest_extractor import extract_constitution_digest
-    from core.extractors.kotlin.sync_outbox_auditor import audit_sync_outbox
-    from core.extractors.kotlin.data_flow_extractor import extract_data_flow
-    from core.extractors.kotlin.room_schema_extractor import extract_room_schema
-    from core.extractors.kotlin.mermaid_visualizer import generate_mermaid_visuals
-    from core.extractors.kotlin.call_graph import export_kotlin_call_graph
-    from core.extractors.kotlin.navigation_graph import export_kotlin_navigation_graph
-    from core.extractors.kotlin.di_graph_exporter import export_kotlin_di_graph
-    from core.extractors.kotlin.ui_map_exporter import export_kotlin_ui_map
-    from core.extractors.kotlin.risk_analyzer import analyze_kotlin_risks
+    # UI Helpers
+    from ui.sidebar import PhaseSidebar
+    from ui.theme_manager import ThemeManager
+    from ui.worker import AnalysisWorker
+    from ui.workspace import Workspace
 
 except ImportError as e:
     print(f"[WARNING] Some modules could not be imported: {e}")
     traceback.print_exc()
 
 
-# Default QR Data (Base64)
-QR_DATA_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAWIAAAFiCAMAAAD7giJIAAAAVFBMVEUfHx/4+v4dHR33+f36/P/8/v8mJib19/suLi7o6u05OTlSUlJFRUbw8vXX2dvh4uVdXV6jpKWwsbO7vL7Oz9LFxsiXmJmNjY5oaWmEhIV8fH1yc3OtGyqdAAAgAElEQVR42uyci6KqrBKANUy0UvN+6f3f83AZUAYIs1p77f/sqbVKRLTPEYZhICrLsiorJnleFJSQXHe7//8NCKbE48E3KSXLEki8DzAgTBpnvALbsk4TA0B2Mye6b8XcqsYODwCbhRYovV2EqU/XufxVFvFfBnmhatPIlxHEj6D/MQcI0flqjRoUmzPJToh9qIpAT8iXI5K+pAZ7tAauA8CaMyseeWMdGAi8VjZzgu6klyIb5x+//X2wpmJfPKclma61ljcc/EoTjzT5RRydJEif8/wGBckQRz7LpnOLb9lBLvCd5kgPn9BcRzLlTuLFA7NsQOU2GouwOSw="
-
-
 class AboutDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("About AI Context Extractor Pro")
-        self.setFixedSize(500, 380)
+        self.setWindowTitle(f"About {app_meta.APP_TITLE}")
+        self.setFixedSize(520, 400)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(24, 24, 24, 24)
         layout.setSpacing(12)
 
-        title = QLabel("⚡ AI CONTEXT EXTRACTOR PRO")
+        title = QLabel(f"⚡ {app_meta.APP_TITLE.upper()}")
         title.setObjectName("aboutTitle")
         title.setAlignment(Qt.AlignCenter)
         layout.addWidget(title)
 
-        v_label = QLabel("Production Grade • Multi-Language Enterprise Suite")
+        v_label = QLabel(f"{app_meta.APP_TAGLINE} • v{app_meta.APP_VERSION}")
         v_label.setObjectName("dialogSubtitle")
         v_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(v_label)
 
         desc = QLabel(
+            f"{app_meta.APP_DESCRIPTION}\n\n"
             "Architectural intelligence and deep context extractor for large-scale codebases.\n\n"
             "Supported Ecosystems:\n"
             "• Kotlin & Android: Clean Architecture, Jetpack Compose, Hilt DI, Outbox Sync, Room DB.\n"
             "• JavaScript / TypeScript: Web Portals, PWA, Firestore Schema, DOM Event Map, Hardware POS.\n"
-            "• Python, Java, C++ & Universal Enterprise Systems."
+            "• Python, Java, C / C++ & Universal Enterprise Systems."
         )
         desc.setObjectName("aboutDesc")
         desc.setWordWrap(True)
@@ -133,12 +154,12 @@ class SponsorDialog(QDialog):
         layout.setContentsMargins(24, 20, 24, 20)
         layout.setSpacing(12)
 
-        title = QLabel("☕ Support AI Project Extractor")
+        title = QLabel("☕ Support AI Context Extractor")
         title.setObjectName("sponsorDialogTitle")
         title.setAlignment(Qt.AlignCenter)
         layout.addWidget(title)
 
-        desc = QLabel("Help keep this project open, production-grade, and actively maintained.")
+        desc = QLabel("Help keep this project open-source, production-grade, and actively maintained.")
         desc.setObjectName("dialogSubtitle")
         desc.setAlignment(Qt.AlignCenter)
         layout.addWidget(desc)
@@ -152,28 +173,33 @@ class SponsorDialog(QDialog):
 
         qr_label = QLabel()
         qr_label.setScaledContents(True)
-        try:
-            img_data = base64.b64decode(QR_DATA_BASE64)
-            pix = QPixmap()
-            pix.loadFromData(img_data)
-            qr_label.setPixmap(pix)
-        except Exception:
+        qr_path = app_meta.sponsor_qr_path()
+        if qr_path.exists():
+            pix = QPixmap(str(qr_path))
+            if not pix.isNull():
+                qr_label.setPixmap(pix)
+            else:
+                qr_label.setText("QR")
+        else:
             qr_label.setText("QR")
         qr_layout.addWidget(qr_label)
         layout.addWidget(qr_frame, alignment=Qt.AlignCenter)
 
-        # PayPal Link Button
-        btn_paypal = QLabel('<a href="https://paypal.me/raza489991" style="background-color: #1f6feb; color: #ffffff; padding: 8px 18px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 13px;">❤️ Sponsor via PayPal</a>')
-        btn_paypal.setOpenExternalLinks(True)
-        layout.addWidget(btn_paypal, alignment=Qt.AlignCenter)
+        # Sponsor / Donate Link Button
+        sponsor_url = app_meta.SPONSOR_URL
+        btn_sponsor = QLabel(f'<a href="{sponsor_url}" style="background-color: #1f6feb; color: #ffffff; padding: 8px 18px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 13px;">❤️ Sponsor Project</a>')
+        btn_sponsor.setOpenExternalLinks(True)
+        layout.addWidget(btn_sponsor, alignment=Qt.AlignCenter)
 
-        # Contact Info
+        # Support & Feedback Info
         contact_box = QVBoxLayout()
         contact_box.setSpacing(4)
-        c1 = QLabel('<a href="mailto:hasnainrazamemon9@gmail.com" style="color:#58a6ff; text-decoration:none; font-size:12px;">📧 hasnainrazamemon9@gmail.com</a>')
-        c1.setOpenExternalLinks(True)
-        c2 = QLabel('<span style="color:#8b949e; font-size:12px;">📞 +91 99258 11505</span>')
-        contact_box.addWidget(c1, alignment=Qt.AlignCenter)
+        if app_meta.SUPPORT_EMAIL:
+            c1 = QLabel(f'<a href="mailto:{app_meta.SUPPORT_EMAIL}" style="color:#58a6ff; text-decoration:none; font-size:12px;">📧 {app_meta.SUPPORT_EMAIL}</a>')
+            c1.setOpenExternalLinks(True)
+            contact_box.addWidget(c1, alignment=Qt.AlignCenter)
+        c2 = QLabel('<a href="https://github.com/smtechie7-collab/ai_project_extractor/issues" style="color:#8b949e; text-decoration:none; font-size:12px;">🐛 Feedback & Issue Tracker</a>')
+        c2.setOpenExternalLinks(True)
         contact_box.addWidget(c2, alignment=Qt.AlignCenter)
         layout.addLayout(contact_box)
 
@@ -202,7 +228,7 @@ class FeatureWorker(QThread):
             extractor = FeatureFilterExtractor(self.query, max_files=self.max_files)
             result = extractor.extract(self.root)
             self.done.emit(self.query, result)
-        except Exception as e:
+        except Exception:
             self.done.emit(self.query, f"[ERROR] Feature extraction failed:\n{traceback.format_exc()}")
 
 
@@ -214,11 +240,11 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("🚀 AI Context Extractor Pro")
         self.setMinimumSize(1320, 900)
         self.setAcceptDrops(True)
-        
+
         self.init_ui()
         self.setup_styles()
         self.create_menus()
-        
+
         # Connect Actions
         self.action_bar.language_combo.currentIndexChanged.connect(self.on_language_changed_trigger)
         self.sidebar.phase_clicked.connect(self.on_sidebar_phase_clicked)
@@ -314,13 +340,14 @@ class MainWindow(QMainWindow):
         # --- BODY ---
         self.splitter = QSplitter(Qt.Horizontal)
         self.sidebar = PhaseSidebar()
-        
+
         self.workspace = Workspace(
-            start_cb=self.start_analysis, 
+            start_cb=self.start_analysis,
             open_project_cb=self.select_project,
-            feature_extract_cb=self.run_feature_extract
+            feature_extract_cb=self.run_feature_extract,
+            stop_cb=self.stop_analysis
         )
-        
+
         self.splitter.addWidget(self.sidebar)
         self.splitter.addWidget(self.workspace)
         self.splitter.setSizes([275, 1045])
@@ -346,6 +373,7 @@ class MainWindow(QMainWindow):
         proj_name = os.path.basename(path)
         self.proj_title.setText(f"📁  {proj_name}")
         self.action_bar.check_git_status(path)
+        self.workspace.reset_outputs()
         self.perform_scan(path, self.action_bar.git_check.isChecked())
         self.workspace.project_loaded()
         self.action_bar.enable_export()
@@ -388,17 +416,26 @@ class MainWindow(QMainWindow):
         struct = "\n".join(build_tree_text(AppState.tree_root)) if AppState.tree_root else "Empty Tree"
         self.workspace.add_output("Structure", struct)
 
+    def stop_analysis(self):
+        if hasattr(self, "worker") and self.worker and self.worker.isRunning():
+            self.status_bar.showMessage("Stopping analysis...")
+            self.worker.cancel()
+
     def start_analysis(self):
         if not AppState.tree_root:
-            self.status_bar.showMessage("❌ Pehle project select karo (📂 Select Project)")
+            self.status_bar.showMessage("❌ Please select a project first (📂 Open Project)")
             return
 
         self.workspace.start_btn.setEnabled(False)
+        self.workspace.stop_btn.setEnabled(True)
+        self.sidebar.setEnabled(False)
+        self.sidebar.reset_status()
         self.status_bar.showMessage("Running deep multi-language analysis...")
-        
+
         self.worker = AnalysisWorker(list(self.current_phases), self.run_phase)
         self.worker.progress.connect(self.on_analysis_progress)
         self.worker.finished.connect(self.on_analysis_finished)
+        self.worker.cancelled.connect(self.on_analysis_cancelled)
         self.worker.start()
 
     def on_analysis_progress(self, percent, phase):
@@ -483,13 +520,14 @@ class MainWindow(QMainWindow):
                 elif phase == "Call Graph": out = export_kotlin_call_graph(root)
                 elif phase == "Risk Analysis": out = analyze_kotlin_risks(root)
 
-            # ── C++ / GENERAL PHASES ──
+            # ── C++ / GENERAL / ALL PHASES ──
             else:
-                if phase == "Module Classification": out = export_python_modules(root)
-                elif phase == "Full Source (AI)": out = export_python_ai_code(root)
-                elif phase == "Risk Analysis": out = "✅ Generic scan complete. No critical risks detected."
+                if phase == "Module Classification": out = export_generic_modules(root)
+                elif phase == "Full Source (AI)": out = export_generic_ai_code(root)
+                elif phase == "Call Graph": out = export_generic_call_graph(root)
+                elif phase == "Risk Analysis": out = analyze_generic_risks(root)
 
-        except Exception as e:
+        except Exception:
             out = f"[ERROR] Phase '{phase}' failed:\n{traceback.format_exc()}"
 
         self.update_output_signal.emit(phase, out or "[INFO] No data generated for this phase.")
@@ -530,14 +568,24 @@ class MainWindow(QMainWindow):
     @Slot(str, str)
     def on_update_output(self, phase, content):
         self.workspace.add_output(phase, content)
-        self.sidebar.mark_phase_done(phase)
+        if content and content.startswith("[ERROR]"):
+            self.sidebar.mark_phase_failed(phase)
+        else:
+            self.sidebar.mark_phase_done(phase)
+
+    def on_analysis_cancelled(self):
+        self.sidebar.setEnabled(True)
+        self.workspace.start_btn.setEnabled(True)
+        self.workspace.stop_btn.setEnabled(False)
+        self.status_bar.showMessage("⏹ Analysis cancelled by user.")
 
     def on_analysis_finished(self):
         self.sidebar.setEnabled(True)
         self.workspace.start_btn.setEnabled(True)
+        self.workspace.stop_btn.setEnabled(False)
         self.sidebar.mark_all_done()
         self.status_bar.showMessage("✅ Analysis Complete.")
-        if "Executive Summary 2.0" in self.current_phases: 
+        if "Executive Summary 2.0" in self.current_phases:
             self.workspace.phase_selector.setCurrentText("Executive Summary 2.0")
             self.sidebar.select_phase("Executive Summary 2.0")
 

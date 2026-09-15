@@ -1,114 +1,145 @@
-﻿🧠 AI Context Extractor (v2.4)
+# 🧠 AI Context Extractor (v2.4)
 
-Bridge the gap between your local codebase and AI coding assistants.
+**Bridge the gap between your local codebase and AI coding assistants.**
 
-AI Context Extractor is a Python-based desktop application (GUI) designed to analyze your software projects and generate optimized context for LLMs (ChatGPT, Claude, Gemini).
+AI Context Extractor is a Python desktop application (PySide6/Qt) that analyses a
+software project and generates context optimised for LLMs (ChatGPT, Claude, Gemini).
 
-Instead of blindly pasting raw code files, this tool extracts the structural meaning of your project—database schemas, navigation graphs, data flows, and dependency injection trees—allowing AI to write accurate code without hallucinations.
+Instead of blindly pasting raw code, it extracts the **structural meaning** of your
+project — database schemas, navigation graphs, data flows, dependency-injection
+trees, call graphs and risk reports — so the AI can write accurate code with fewer
+hallucinations.
 
-✨ Key Features
+> All analysis runs **locally**. No code is uploaded anywhere by this tool.
 
-🔍 Deep Static Analysis
+---
 
-Kotlin / Android:
+## ✨ Key features
 
-Data Flow Tracer: Traces logic from ViewModel → Repository → DAO.
+### Deep static analysis
 
-Room DB Schema: Extracts tables, columns, and relationships into SQL/ERD formats.
+| Ecosystem | Extracted insight |
+|-----------|-------------------|
+| **Kotlin / Android** | Data flow tracer (ViewModel → Repository → DAO), Room DB schema, Jetpack Compose navigation graph, manual DI + Hilt/Dagger graph, UI map, outbox/cloud-sync audit, architecture digest, call graph, risk analysis |
+| **JavaScript / TypeScript / Web** | Dependency graph, Firestore & backend schema, Web UI/DOM event map, hardware & service integrations, architecture/spec digest, risk analysis |
+| **Python** | Module classification, call graph, AST-powered risk analysis, full source export |
+| **Java** | Module classification, call graph, risk analysis |
+| **C / C++ and "All Languages"** | Language-neutral module classification, full source export and heuristic risk analysis |
 
-Navigation Graph: Maps NavHost routes and screen connections.
+### Visual architecture
+Generates **Mermaid.js** blocks (ER diagrams, navigation flowcharts) you can paste
+straight into ChatGPT or Mermaid Live.
 
-DI Graph: Visualizes Manual DI (AppContainer) and Hilt/Dagger modules.
+### Security & privacy
+- **Safe Sanitizer** (on by default) redacts AWS keys, Google API keys, generic
+  `api_key` / `token` / `password` assignments, bearer tokens, emails and
+  non-private IPv4 addresses before content is copied or exported.
+- 100% local processing.
 
-Python: Call graphs and module classification.
+### Developer workflow
+- **Git diff mode** – analyse only modified / staged / untracked files.
+- **Quick feature extraction** – type a feature name (`billing`, `kyc`, `auth` …) and
+  pull only the related files, ranked by relevance and grouped by architectural layer.
+- **Markdown merge** – combine many `.md` files into one AI-ready document.
+- **Prompt templates** – one-click copy with "Find Bugs", "Security Audit", "Refactor",
+  "Write Documentation", "Explain to Junior".
+- **Exports** – active view (`.txt`), all phases, consolidated `.md`, or a full `.zip`.
 
-JS/TS: Dependency graphs and risk analysis.
+---
 
-📊 Visual Architecture (Mermaid.js)
+## 🚀 Installation
 
-Automatically generates Mermaid.js code blocks. Simply copy-paste the output into ChatGPT or Mermaid Live to visualize:
+> Requires **Python 3.11+**.
 
-Database Entity-Relationship Diagrams (ERD).
+```bash
+git clone https://github.com/smtechie7-collab/ai_project_extractor.git
+cd ai_project_extractor
 
-Screen Navigation Flowcharts.
-
-🛡️ Security & Privacy
-
-Safe Mode: Automatically sanitizes output by redacting API Keys, AWS Secrets, Emails, and IP addresses using regex patterns before copying to clipboard.
-
-Local Processing: All analysis happens locally on your machine. No code is uploaded to any server.
-
-⚡ Developer Workflow
-
-Git Integration: Toggle "Git Changes Only" to analyze only the files you modified. Perfect for generating context for a specific bug fix or feature.
-
-Prompt Templates: One-click copy with instructions like "Find Bugs", "Refactor", or "Write Documentation".
-
-Token Budgeting: Real-time token usage estimation.
-
-🚀 Installation
-
-Clone the repository:
-
-git clone [https://github.com/smtechie7-collab/ai-context-extractor.git](https://github.com/smtechie7-collab/ai-context-extractor.git)
-cd ai-context-extractor
-
-
-Install Dependencies:
+python -m venv .venv
+# Windows:      .venv\Scripts\activate
+# macOS/Linux:  source .venv/bin/activate
 
 pip install -r requirements.txt
+```
 
+### Run
 
-Run the App:
+```bash
+python ai_project_extractor.py
+```
 
-python app.py
+Or install the package (adds an `aice` command):
 
+```bash
+pip install -e .
+aice
+```
 
-📖 How to Use
+---
 
-Select Project: Click "Select Project" and choose your root folder (e.g., your Android project).
+## 📖 How to use
 
-Choose Mode:
+1. **Open Project** – click `📂 Open Project` (or drag & drop a folder) and pick your
+   project root.
+2. **Choose mode** – pick a **Language** in the toolbar. For a scoped analysis, tick
+   **Git Diff Only** to analyse just your changed files.
+3. **Run analysis** – click **▶ Run Deep Analysis**. Progress is shown per phase.
+4. **Inspect** – use the **Phase** dropdown to view each report. The sidebar tracks
+   each phase's state.
+5. **Send to AI** – pick an **AI Task** template, keep **Safe Sanitizer** on, and click
+   **📋 Copy with Prompt**. Paste into ChatGPT / Claude / Gemini.
 
-Full Scan: Analyzes the entire codebase.
+---
 
-Git Mode: Check "Git Changes Only" to analyze only modified/staged files.
+## 🛠️ Technology stack
 
-Run Analysis: Click the "Run Analysis" button.
+- **Language:** Python 3.11+
+- **GUI:** PySide6 (Qt for Python)
+- **Analysis:** stdlib `ast`, `re`, `os`, `subprocess` (git)
+- **State:** module-level `AppState` with reactive UI updates *(migration to an
+  immutable `ScanConfig` is on the roadmap)*
 
-Select Output: Use the dropdown to view specific insights (e.g., "Data Flow Tracer", "Database Schema").
+---
 
-Copy to AI:
+## 🧪 Development
 
-Select a task (e.g., "🐛 Find Bugs").
+```bash
+pip install -r requirements-dev.txt
 
-Click "Copy w/ Prompt".
+ruff check .          # lint
+mypy core state models
+pytest                # tests
+```
 
-Paste into ChatGPT/Claude.
+See **[CONTRIBUTING.md](CONTRIBUTING.md)** for the full workflow and
+**[SECURITY.md](SECURITY.md)** to report vulnerabilities.
+Changes are tracked in **[CHANGELOG.md](CHANGELOG.md)**.
 
-🛠️ Technology Stack
+---
 
-Language: Python 3
+## 🗺️ Roadmap (highlights)
 
-GUI Framework: PySide6 (Qt for Python)
+- Real-time **token budgeting** with per-provider context limits.
+- **Impact analysis** — changed files + their transitive dependents.
+- Standalone **secrets scan** phase.
+- **CLI mode** and CI integration.
+- Headless **MCP server** mode and direct AI-provider integration.
+- More ecosystems (Flutter, Swift, Go, Rust, C#, PHP) and infra (Docker, K8s, Terraform).
 
-State Management: Singleton pattern with Reactive UI updates.
+---
 
-🤝 Contributing
+## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! Please open a Pull Request.
 
-Fork the Project
+1. Fork the project
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit (`git commit -m 'Add some AmazingFeature'`)
+4. Push (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-Create your Feature Branch (git checkout -b feature/AmazingFeature)
+---
 
-Commit your Changes (git commit -m 'Add some AmazingFeature')
+## 📄 License
 
-Push to the Branch (git push origin feature/AmazingFeature)
-
-Open a Pull Request
-
-📄 License
-
-
-Distributed under the MIT License. See LICENSE for more information.
+Distributed under the **MIT License**. See [LICENSE](LICENSE) for details.

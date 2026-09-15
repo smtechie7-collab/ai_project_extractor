@@ -1,0 +1,13 @@
+-r requirements.txt
+
+# --- Testing ---
+pytest>=8.0
+pytest-qt>=4.4
+coverage[toml]>=7.6
+
+# --- Static analysis ---
+ruff>=0.6
+mypy>=1.11
+vulture>=2.11
+bandit>=1.7
+pip-audit>=2.7

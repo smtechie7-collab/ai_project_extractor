@@ -1,4 +1,5 @@
 import os
+
 from core.backend_domain_extractor import detect_backend_domains
 from core.coupling_extractor import detect_cross_domain_coupling
 

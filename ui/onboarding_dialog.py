@@ -1,7 +1,5 @@
-from PySide6.QtWidgets import (
-    QDialog, QVBoxLayout, QLabel, QPushButton, QCheckBox
-)
 from PySide6.QtCore import QSettings
+from PySide6.QtWidgets import QCheckBox, QDialog, QLabel, QPushButton, QVBoxLayout
 
 
 class OnboardingDialog(QDialog):

@@ -1,4 +1,5 @@
 import os
+
 from core.classifier import classify_file
 
 
@@ -7,7 +8,7 @@ def export_by_role(tree_root, project_root):
 
     def walk(node):
         if not node.is_dir and node.path.endswith(".kt"):
-            with open(node.path, "r", encoding="utf-8", errors="ignore") as f:
+            with open(node.path, encoding="utf-8", errors="ignore") as f:
                 content = f.read()
 
             role = classify_file(node.path, content)

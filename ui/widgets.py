@@ -1,6 +1,6 @@
-from PySide6.QtWidgets import QPushButton, QWidget, QVBoxLayout, QLabel
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QCursor
+from PySide6.QtWidgets import QLabel, QPushButton, QVBoxLayout, QWidget
 
 
 class PrimaryButton(QPushButton):
@@ -43,7 +43,7 @@ class StatCard(QWidget):
 
         lbl_title = QLabel(label.upper())
         lbl_title.setObjectName("statCardTitle")
-        
+
         self.lbl_value = QLabel(value)
         self.lbl_value.setObjectName("statCardValue")
 

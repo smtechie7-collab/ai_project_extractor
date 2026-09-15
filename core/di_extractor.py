@@ -1,4 +1,3 @@
-import os
 
 
 DI_KEYWORDS = [
@@ -17,7 +16,7 @@ def detect_di_files(tree_root):
     def walk(node):
         if not node.is_dir and node.path.endswith(".kt"):
             try:
-                with open(node.path, "r", encoding="utf-8", errors="ignore") as f:
+                with open(node.path, encoding="utf-8", errors="ignore") as f:
                     content = f.read()
             except Exception:
                 return

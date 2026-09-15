@@ -1,5 +1,5 @@
-import re
 import os
+import re
 
 CLASS_REF_PATTERN = re.compile(r'\b([A-Z][A-Za-z0-9_]+)\b')
 
@@ -14,7 +14,7 @@ def detect_missing_references(tree_root):
             declared.add(name)
 
             try:
-                with open(node.path, "r", encoding="utf-8", errors="ignore") as f:
+                with open(node.path, encoding="utf-8", errors="ignore") as f:
                     content = f.read()
             except Exception:
                 return

@@ -1,13 +1,12 @@
-import re
 import os
-from typing import List, Dict
+
 
 class FlowIdentifier:
     """
     Detects critical business flows (Sales, Inventory, Auth, Data Processing)
     and sequences them logically: Entry/Route -> Business Logic -> Data/Model.
     """
-    
+
     # Business domain keywords (checked against path/filename tokens)
     DOMAINS = {
         "SALES_PAYMENT_FLOW": ["sale", "billing", "invoice", "checkout", "cart", "order", "payment", "stripe", "transaction", "pos", "quotation"],
@@ -26,7 +25,7 @@ class FlowIdentifier:
         # JS / TS / Web
         "PAGE_ROUTE", "COMPONENT", "FEATURE_MODULE", "APP_ENTRY", "HOOK", "STORE", "SERVICE_API", "SERVER", "MODEL_TYPE",
         # Java
-        "CONTROLLER", "SERVICE", "REPOSITORY", "ENTITY", "DTO",
+        "CONTROLLER", "DTO",
         # Universal
         "UI", "DATA_ACCESS"
     }
@@ -43,9 +42,9 @@ class FlowIdentifier:
     }
 
     @staticmethod
-    def identify_critical_paths(metrics) -> Dict[str, List[str]]:
+    def identify_critical_paths(metrics) -> dict[str, list[str]]:
         paths = {domain: [] for domain in FlowIdentifier.DOMAINS}
-        
+
         from state.app_state import AppState
 
         for m in metrics:
@@ -58,21 +57,21 @@ class FlowIdentifier:
             except Exception:
                 rel = filename
             token_string = rel.lower().replace("\\", "/")
-            
+
             for domain, keywords in FlowIdentifier.DOMAINS.items():
                 if any(kw in token_string for kw in keywords):
                     paths[domain].append(f"{m.role}: {filename}")
-        
+
         # Keep only domains where relevant components exist
         return {d: list(dict.fromkeys(p)) for d, p in paths.items() if p}
 
     @staticmethod
-    def format_report(flow_map: Dict[str, List[str]]) -> str:
+    def format_report(flow_map: dict[str, list[str]]) -> str:
         lines = []
         lines.append("=" * 60)
         lines.append("🎯 CRITICAL BUSINESS FLOWS (AUTO-DETECTED)")
         lines.append("=" * 60)
-        
+
         if not flow_map:
             lines.append("No explicit business domain flows identified from component naming.")
             return "\n".join(lines)
@@ -80,13 +79,13 @@ class FlowIdentifier:
         for domain, components in flow_map.items():
             lines.append(f"\n🔹 {domain}")
             lines.append("-" * (len(domain) + 3))
-            
+
             # Sort by architectural sequence: Entry -> Logic -> Data
             sorted_comp = sorted(components, key=lambda x: FlowIdentifier.ROLE_SORT_ORDER.get(x.split(":")[0], 99))
-            
+
             for i, comp in enumerate(sorted_comp):
                 prefix = "   " if i == 0 else "   → "
                 lines.append(f"{prefix}{comp}")
-        
+
         lines.append("\n[AI GUIDANCE] Feed these sequence flows into LLMs for domain-accurate feature additions and refactoring.")
         return "\n".join(lines)

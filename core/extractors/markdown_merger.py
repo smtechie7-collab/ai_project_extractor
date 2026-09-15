@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 core/extractors/markdown_merger.py
 ===================================
@@ -15,8 +14,8 @@ Features:
 """
 
 import os
-import re
 from datetime import datetime
+
 from core.utils.file_reader import read_text_file
 
 SKIP_DIRS = {

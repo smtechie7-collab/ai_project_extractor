@@ -1,0 +1,3 @@
+# AI Context Extractor — runtime dependencies
+# Verified sole third-party runtime dependency (everything else is stdlib/AST/regex).
+PySide6>=6.6,<7

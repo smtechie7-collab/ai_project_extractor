@@ -1,4 +1,5 @@
 from PySide6.QtGui import QAction
+
 from core.language_registry import LANGUAGE_PROFILES
 from state.app_state import AppState
 

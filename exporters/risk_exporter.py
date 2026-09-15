@@ -1,7 +1,8 @@
 import os
-from core.risk_analyzer import detect_fragile_classes
+
 from core.layer_violation_detector import detect_layer_violations
 from core.missing_reference_detector import detect_missing_references
+from core.risk_analyzer import detect_fragile_classes
 
 
 def export_risk_analysis(tree_root, project_root):

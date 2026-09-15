@@ -1,69 +1,91 @@
 import os
-from state.app_state import AppState
-from core.language_registry import LANGUAGE_PROFILES
 
-class Node:
-    def __init__(self, path: str, is_dir: bool):
-        self.path = path
-        self.name = os.path.basename(path)
-        self.is_dir = is_dir
-        self.children = []
+from core.language_registry import LANGUAGE_PROFILES
+from state.app_state import AppState
+
+
+from models.tree_node import Node, TreeNode
 
 def is_supported_file(path: str) -> bool:
     profile = LANGUAGE_PROFILES.get(AppState.selected_language)
     if not profile:
         return False
-    
+
     extensions = profile["extensions"]
     if not extensions:
         return True # All files mode
 
     return any(path.endswith(ext) for ext in extensions)
 
+IGNORED_DIRS = {
+    "__pycache__", "build", "dist", "node_modules", "venv", ".venv",
+    ".git", ".idea", ".vs", "target", ".gradle", ".pytest_cache"
+}
+ALLOWED_HIDDEN = {".github", ".gitignore"}
+
+
 def scan_directory(root_path: str, whitelist_files: set = None) -> Node:
     """
-    Scans directory recursively.
+    Scans directory iteratively using os.walk (no recursion).
     If 'whitelist_files' is provided, ONLY includes files present in that set.
+    Empty directories containing no supported files are automatically pruned.
     """
-    root = Node(root_path, True)
+    root_norm = os.path.normpath(root_path)
+    root_node = Node(root_path, True)
+    dir_nodes: dict[str, Node] = {root_norm: root_node}
+
+    # Normalize whitelist if provided
+    normalized_whitelist = None
+    if whitelist_files is not None:
+        normalized_whitelist = {os.path.normpath(f) for f in whitelist_files}
 
     try:
-        items = os.listdir(root_path)
-    except PermissionError:
-        return root
+        walker = os.walk(root_path, topdown=True)
+    except (PermissionError, FileNotFoundError):
+        return root_node
 
-    has_relevant_children = False
+    for dirpath, dirnames, filenames in walker:
+        # Prune ignored and hidden directories in-place before os.walk descends
+        dirnames[:] = [
+            d for d in dirnames
+            if d not in IGNORED_DIRS and (not d.startswith(".") or d in ALLOWED_HIDDEN)
+        ]
 
-    for item in items:
-        full_path = os.path.join(root_path, item)
+        # Filter and collect accepted files in current dirpath
+        for item in sorted(filenames):
+            if item.startswith(".") and item not in ALLOWED_HIDDEN:
+                continue
 
-        # Skip Junk
-        if item.startswith(".") and item != ".gitignore": # Keep gitignore sometimes useful
-             if item not in [".github"]:
-                 continue
-        if item in {"__pycache__", "build", "dist", "node_modules", "venv", ".git", ".idea"}:
-            continue
+            full_path = os.path.join(dirpath, item)
+            if not is_supported_file(full_path):
+                continue
 
-        if os.path.isdir(full_path):
-            # Recurse
-            child_node = scan_directory(full_path, whitelist_files)
-            # Only add directory if it has content
-            if child_node.children:
-                root.children.append(child_node)
-                has_relevant_children = True
-        else:
-            # File Handling
-            is_relevant = is_supported_file(full_path)
-            
-            # 🔥 Git Filter Check (Robust Path Normalization)
-            if whitelist_files is not None:
-                # Ensure we match normalized paths (Handle windows/linux separators)
-                norm_path = os.path.normpath(full_path)
-                if norm_path not in whitelist_files:
-                    is_relevant = False
+            norm_file = os.path.normpath(full_path)
+            if normalized_whitelist is not None and norm_file not in normalized_whitelist:
+                continue
 
-            if is_relevant:
-                root.children.append(Node(full_path, False))
-                has_relevant_children = True
+            # Ensure parent chain exists in dir_nodes
+            parent_dir = os.path.normpath(dirpath)
+            if parent_dir not in dir_nodes:
+                # Build directory chain up to root
+                chain = []
+                curr = parent_dir
+                while curr and curr != root_norm and curr not in dir_nodes:
+                    chain.append(curr)
+                    next_curr = os.path.normpath(os.path.dirname(curr))
+                    if next_curr == curr:
+                        break
+                    curr = next_curr
 
-    return root
+                # Attach downwards from the nearest ancestor
+                for d in reversed(chain):
+                    ancestor = os.path.normpath(os.path.dirname(d))
+                    ancestor_node = dir_nodes.get(ancestor, root_node)
+                    d_node = Node(d, True)
+                    ancestor_node.children.append(d_node)
+                    dir_nodes[d] = d_node
+
+            # Attach file node
+            dir_nodes[parent_dir].children.append(Node(full_path, False))
+
+    return root_node

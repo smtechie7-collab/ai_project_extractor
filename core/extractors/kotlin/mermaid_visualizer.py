@@ -1,4 +1,5 @@
 import re
+
 from core.utils.file_reader import read_text_file
 
 # --- REGEX PATTERNS ---
@@ -16,7 +17,7 @@ NAV_CALL_PATTERN = re.compile(r'\.navigate\(\s*["\']([^"\'${}]+)["\']')
 def generate_mermaid_visuals(tree_root):
     db_diagram = _generate_db_er_diagram(tree_root)
     nav_diagram = _generate_nav_flow_diagram(tree_root)
-    
+
     report = []
     report.append("# VISUAL ARCHITECTURE REPORT (MERMAID)")
     report.append("Copy the code blocks below into https://mermaid.live or LLM markdown viewers.\n")
@@ -68,7 +69,7 @@ def _generate_db_er_diagram(tree_root):
 
                     safe_table = _clean_mermaid_id(table_name)
                     lines.append(f"    {safe_table} {{")
-                    
+
                     for line in body.splitlines():
                         f_match = FIELD_RE.search(line)
                         if f_match:
@@ -76,24 +77,24 @@ def _generate_db_er_diagram(tree_root):
                             col_type = f_match.group(2).replace("<", "~").replace(">", "~")
                             is_pk = "PK" if "@PrimaryKey" in line else ""
                             lines.append(f"        {col_type} {col_name} {is_pk}".rstrip())
-                    
+
                     lines.append("    }")
 
         for child in node.children:
             walk(child)
 
     walk(tree_root)
-    
+
     if not has_entities:
         return "%% No Room @Entities detected in codebase"
-    
+
     return "\n".join(lines)
 
 
 def _generate_nav_flow_diagram(tree_root):
     lines = ["graph TD"]
     lines.append("    classDef screen fill:#2d3748,stroke:#4fc3f7,stroke-width:2px,color:#fff;")
-    
+
     file_map = {}
     all_routes = set()
 
@@ -103,7 +104,7 @@ def _generate_nav_flow_diagram(tree_root):
                 code = read_text_file(node.path)
             except Exception:
                 return
-            
+
             defined = set()
             for m in HOST_ROUTE_PATTERN.finditer(code):
                 r = m.group(1)
@@ -115,14 +116,14 @@ def _generate_nav_flow_diagram(tree_root):
                 r = m.group(1)
                 if r:
                     called.add(r.strip())
-            
+
             if defined or called:
                 file_map[node.name] = {"def": defined, "call": called}
                 all_routes.update(defined)
 
         for child in node.children:
             walk(child)
-    
+
     walk(tree_root)
 
     clean_routes = {}
@@ -143,7 +144,7 @@ def _generate_nav_flow_diagram(tree_root):
         for target_raw in calls:
             target_label = target_raw.split("/")[0].split("?")[0]
             target_id = clean_routes.get(target_label, _clean_mermaid_id(target_label))
-            
+
             if source_id != target_id:
                 lines.append(f'    {source_id} --> {target_id}')
 

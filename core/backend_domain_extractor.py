@@ -1,4 +1,3 @@
-import os
 
 DOMAIN_RULES = {
     "sales": ["sales", "invoice"],
@@ -19,14 +18,14 @@ ROLE_HINTS = {
 
 
 def detect_backend_domains(tree_root):
-    domain_map = {d: [] for d in DOMAIN_RULES.keys()}
+    domain_map = {d: [] for d in DOMAIN_RULES}
 
     def walk(node):
         if not node.is_dir and node.path.endswith(".kt"):
             path_lower = node.path.lower()
 
             try:
-                with open(node.path, "r", encoding="utf-8", errors="ignore") as f:
+                with open(node.path, encoding="utf-8", errors="ignore") as f:
                     content = f.read()
             except Exception:
                 return

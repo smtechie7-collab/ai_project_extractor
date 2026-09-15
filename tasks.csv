@@ -1,0 +1,78 @@
+ID,Phase,Task,Priority,EffortDays,Dependencies,Status
+P0-1,Phase 0 - Repo hygiene,Create requirements.txt with pinned PySide6,Blocker,0.2,,Done
+P0-2,Phase 0 - Repo hygiene,Create pyproject.toml (PEP 621) with entry point,Blocker,0.3,P0-1,Done
+P0-3,Phase 0 - Repo hygiene,Harden .gitignore,Blocker,0.1,,Done
+P0-4,Phase 0 - Repo hygiene,Untrack committed junk (.vs __pycache__ stray files),Blocker,0.2,P0-3,Done
+P0-5,Phase 0 - Repo hygiene,Remove hardcoded personal data (phone gmail paypal),Blocker,0.2,,Done
+P0-6,Phase 0 - Repo hygiene,Move qr.jpg + base64 embed to assets and lazy load,Blocker,0.2,P0-5,Done
+P0-7,Phase 0 - Repo hygiene,Rewrite README to match actual behavior,Blocker,0.4,,Done
+P0-8,Phase 0 - Repo hygiene,Add CHANGELOG CONTRIBUTING SECURITY,Blocker,0.3,,Done
+P0-9,Phase 0 - Repo hygiene,Verify LICENSE and headers,Blocker,0.1,,Done
+P0-10,Phase 0 - Repo hygiene,Delete stray New Text Document.txt and empty dirs,Blocker,0.1,,Done
+P1-1,Phase 1 - Stability,Remove auto-install bootstrap; add dependency check dialog,Blocker,0.3,P0-2,Done
+P1-2,Phase 1 - Stability,Fix run_phase routing for cpp/all with generic extractor,Blocker,0.6,,Done
+P1-3,Phase 1 - Stability,Fix OutputRegistry lifecycle clear on project load,Blocker,0.3,,Done
+P1-4,Phase 1 - Stability,Replace recursive scan with iterative os.walk,Blocker,0.4,,Done
+P1-5,Phase 1 - Stability,Add global logging setup,Blocker,0.4,,Done
+P1-6,Phase 1 - Stability,Remove bare except Exception blocks (~40),High,1.0,P1-5,In Progress
+P1-7,Phase 1 - Stability,Per-phase error isolation with UI warning,High,0.5,,Done
+P1-8,Phase 1 - Stability,Add cancellation support with Stop button,High,0.6,,Done
+P1-9,Phase 1 - Stability,Fix progress formula and add phase timing ETA,High,0.4,P1-8,Done
+P1-10,Phase 1 - Stability,Sidebar state machine with failed state,High,0.3,P1-7,Done
+P1-11,Phase 1 - Stability,Wire content read cache (mtime+size LRU),High,0.6,P1-4,Done
+P1-12,Phase 1 - Stability,Consistent file-size binary encoding guards,Med,0.3,P1-11,Done
+P1-13,Phase 1 - Stability,Harden git scan with porcelain -z,Med,0.4,,Done
+P2-1,Phase 2 - Refactor,Introduce ScanConfig frozen dataclass,High,1.5,P1-3,Done
+P2-2,Phase 2 - Refactor,Introduce AnalysisContext object,High,0.8,P2-1,Done
+P2-3,Phase 2 - Refactor,Remove global AppState singleton,High,0.8,P2-1,Todo
+P2-4,Phase 2 - Refactor,Unify tree model into single Node class,High,0.8,P2-2,Done
+P2-5,Phase 2 - Refactor,Add Extractor registry and Protocol,High,1.0,P2-2,Done
+P2-6,Phase 2 - Refactor,Merge 4 risk_analyzer into shared engine,High,1.0,P2-5,Todo
+P2-7,Phase 2 - Refactor,Merge executive_summary and v2,Med,0.3,,Done
+P2-8,Phase 2 - Refactor,Resolve dead code wire or delete,High,1.0,P2-5,Todo
+P2-9,Phase 2 - Refactor,Add type hints and mypy strict on core,High,1.0,P2-5,Todo
+P2-10,Phase 2 - Refactor,Isolate extractor packages remove circular imports,Med,0.5,P2-5,Todo
+P3-1,Phase 3 - Testing,Setup pytest conftest and fixtures,High,0.6,P2-1,Done
+P3-2,Phase 3 - Testing,Unit tests for scanner cache config git file_reader,High,0.8,P3-1,Done
+P3-3,Phase 3 - Testing,Extractor unit tests per language,High,1.2,P3-1,Done
+P3-4,Phase 3 - Testing,Golden snapshot tests with update flag,High,0.8,P3-3,Todo
+P3-5,Phase 3 - Testing,Sanitizer tests,High,0.4,P3-1,Done
+P3-6,Phase 3 - Testing,UI smoke tests with pytest-qt,Med,0.8,P3-1,Done
+P3-7,Phase 3 - Testing,Coverage config with gate,Med,0.2,P3-3,Todo
+P3-8,Phase 3 - Testing,ruff config and pre-commit hooks,High,0.3,P1-6,In Progress
+P3-9,Phase 3 - Testing,mypy config and CI enforcement,High,0.3,P2-9,Todo
+P3-10,Phase 3 - Testing,GitHub Actions CI matrix,High,0.5,P3-8,In Progress
+P3-11,Phase 3 - Testing,Release workflow on tag,Med,0.5,P3-10,Todo
+P3-12,Phase 3 - Testing,Test-data generator script,Low,0.3,P3-1,Todo
+P4-1,Phase 4 - Features,Token Budget Engine with provider presets,High,1.0,P2-5,Todo
+P4-2,Phase 4 - Features,Auto-trim and summarize on budget overflow,High,0.8,P4-1,Todo
+P4-3,Phase 4 - Features,Impact Analysis reverse transitive dependents,High,1.2,P4-1,Todo
+P4-4,Phase 4 - Features,Unified dependency graph extraction,High,0.8,P4-3,Todo
+P4-5,Phase 4 - Features,Secrets Scan phase with expanded patterns,High,0.8,P3-5,Todo
+P4-6,Phase 4 - Features,Output viewer search line numbers copy-raw,High,0.8,,Todo
+P4-7,Phase 4 - Features,Run history and run-to-run diff,Med,0.8,P1-3,Todo
+P4-8,Phase 4 - Features,Language and framework auto-detect plus monorepo,High,1.0,P2-1,Todo
+P4-9,Phase 4 - Features,i18n with QTranslator,Med,0.6,,Todo
+P4-10,Phase 4 - Features,Per-project presets,Med,0.5,P4-8,Todo
+P4-11,Phase 4 - Features,Wire onboarding dialog and empty states,Med,0.3,P2-8,Todo
+P5-1,Phase 5 - Platform,Headless CLI scan command,High,1.0,P2-5,Todo
+P5-2,Phase 5 - Platform,Parallel extraction with ThreadPoolExecutor,High,1.0,P2-2,Todo
+P5-3,Phase 5 - Platform,Incremental analysis with persisted cache,High,0.8,P1-11,Todo
+P5-4,Phase 5 - Platform,PyInstaller one-file build,High,1.0,P0-2,Todo
+P5-5,Phase 5 - Platform,MSI installer and code signing,Med,1.0,P5-4,Todo
+P5-6,Phase 5 - Platform,Auto-update check,Low,0.6,P3-11,Todo
+P5-7,Phase 5 - Platform,MCP server mode,High,1.5,P2-5,Todo
+P5-8,Phase 5 - Platform,Direct AI integration with cost estimate,High,1.5,P4-1,Todo
+P5-9,Phase 5 - Platform,New ecosystems Flutter Swift Go Rust C# PHP,Med,2.0,P4-8,Todo
+P5-10,Phase 5 - Platform,Infra extractors Docker K8s Terraform SQL,Med,1.0,P5-9,Todo
+P5-11,Phase 5 - Platform,Plugin system for third-party extractors,Med,0.8,P2-5,Todo
+P5-12,Phase 5 - Platform,Structured logging and diagnostics bundle,Low,0.4,P1-5,Todo
+P6-1,Phase 6 - Manager Deliverables,Project health dashboard,Med,1.2,P4-1,Todo
+P6-2,Phase 6 - Manager Deliverables,Ownership map from git blame,Med,0.8,P4-3,Todo
+P6-3,Phase 6 - Manager Deliverables,Churn x Complexity refactor hotspots,Med,1.0,P4-4,Todo
+P6-4,Phase 6 - Manager Deliverables,Dead-code and duplication detection,Med,1.0,P4-4,Todo
+P6-5,Phase 6 - Manager Deliverables,Test coverage mapping,Med,0.8,P3-1,Todo
+P6-6,Phase 6 - Manager Deliverables,Exports PDF HTML Confluence Jira CSV,Med,1.0,P6-1,Todo
+P6-7,Phase 6 - Manager Deliverables,Onboarding doc generator,Low,0.6,P4-1,Todo
+P6-8,Phase 6 - Manager Deliverables,Semantic search index optional,Low,1.5,P2-5,Todo
+P6-9,Phase 6 - Manager Deliverables,Accessibility and shortcuts audit,Low,0.5,,Todo

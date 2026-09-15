@@ -1,9 +1,9 @@
+import ast
 import os
 import re
-import ast
-from dataclasses import dataclass, field
-from typing import List, Dict, Tuple
 from collections import defaultdict
+from dataclasses import dataclass, field
+
 
 @dataclass
 class RoleMetric:
@@ -16,7 +16,7 @@ class RoleMetric:
 
 @dataclass
 class ProjectStats:
-    counts: Dict[str, int] = field(default_factory=lambda: defaultdict(int))
+    counts: dict[str, int] = field(default_factory=lambda: defaultdict(int))
     total_lines: int = 0
     language: str = "general"
 
@@ -41,7 +41,7 @@ class RoleAuditor:
     CPP_INCLUDE_RE = re.compile(r"""#include\s*[<"]([^>"]+)[>"]""")
 
     @staticmethod
-    def audit_project(tree_root, language: str) -> Tuple[List[RoleMetric], ProjectStats]:
+    def audit_project(tree_root, language: str) -> tuple[list[RoleMetric], ProjectStats]:
         metrics = []
         lang = (language or "kotlin").lower()
         stats = ProjectStats(language=lang)
@@ -65,7 +65,7 @@ class RoleAuditor:
         return metrics, stats
 
     @staticmethod
-    def _get_default_roles_for_lang(lang: str) -> List[str]:
+    def _get_default_roles_for_lang(lang: str) -> list[str]:
         if "python" in lang:
             return ["ROUTER", "SERVICE", "MODEL", "TASK", "CONFIG", "UTIL", "TEST", "CLI", "OTHER"]
         elif "javascript" in lang or "js" in lang or "ts" in lang or "web" in lang:
@@ -143,11 +143,7 @@ class RoleAuditor:
             if dep_count > 15: score += 20
 
             # Language-specific risks
-            if "kotlin" in lang and "!!" in content:
-                score += 15
-            elif "python" in lang and ("eval(" in content or "exec(" in content):
-                score += 15
-            elif ("javascript" in lang or "js" in lang) and ("eval(" in content or "dangerouslySetInnerHTML" in content):
+            if "kotlin" in lang and "!!" in content or "python" in lang and ("eval(" in content or "exec(" in content) or ("javascript" in lang or "js" in lang) and ("eval(" in content or "dangerouslySetInnerHTML" in content):
                 score += 15
 
         return RoleMetric(
@@ -284,7 +280,7 @@ class RoleAuditor:
         return "OTHER"
 
     @staticmethod
-    def detect_violations(metrics: List[RoleMetric]) -> List[str]:
+    def detect_violations(metrics: list[RoleMetric]) -> list[str]:
         violations = []
         for m in metrics:
             if m.path.lower().endswith(RoleAuditor.NON_CODE_EXTENSIONS):

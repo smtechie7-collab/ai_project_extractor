@@ -1,4 +1,3 @@
-import os
 
 # Order matters: top = highest authority
 FOLDER_RULES = [

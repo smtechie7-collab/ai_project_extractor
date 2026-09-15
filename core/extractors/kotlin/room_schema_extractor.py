@@ -1,5 +1,5 @@
 import re
-import os
+
 from core.utils.file_reader import read_text_file
 
 # Regex patterns for Room
@@ -23,7 +23,7 @@ def extract_room_schema(tree_root):
                 # 1. Extract Table Name
                 table_match = TABLE_NAME_PATTERN.search(code)
                 class_match = CLASS_NAME_PATTERN.search(code)
-                
+
                 if not class_match:
                     return
 
@@ -34,14 +34,14 @@ def extract_room_schema(tree_root):
                 # 2. Extract Fields (Columns)
                 fields = []
                 lines = code.splitlines()
-                
+
                 for line in lines:
                     field_match = FIELD_PATTERN.search(line)
                     if field_match:
                         col_name = field_match.group(2)
                         col_type = field_match.group(3)
                         is_pk = "@PrimaryKey" in line
-                        
+
                         fields.append({
                             "name": col_name,
                             "type": col_type,
@@ -70,7 +70,7 @@ def format_schema_output(tables):
     lines.append("ROOM DATABASE SCHEMA (AI OPTIMIZED)")
     lines.append("=" * 50)
     lines.append("")
-    
+
     # 1. Concise Summary (For AI fast reading)
     lines.append("## SUMMARY TABLES")
     for t in tables:
@@ -80,12 +80,12 @@ def format_schema_output(tables):
 
     # 2. Detailed Schema
     lines.append("## DETAILED STRUCTURE")
-    
+
     for t in tables:
         lines.append(f"TABLE: {t['table']}")
         lines.append(f"CLASS: {t['class']}")
         lines.append("-" * 30)
-        
+
         for col in t['columns']:
             marker = "🔑 " if col['pk'] else "   "
             lines.append(f"{marker}{col['name']:<20} : {col['type']}")
@@ -103,5 +103,5 @@ def format_schema_output(tables):
             lines.append(f"        +{clean_type} {col['name']}")
         lines.append("    }")
     lines.append("```")
-    
+
     return "\n".join(lines)

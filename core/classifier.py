@@ -1,5 +1,7 @@
-from rules.role_rules import FOLDER_RULES, FILENAME_RULES, KEYWORD_RULES
 import os
+
+from rules.role_rules import FILENAME_RULES, FOLDER_RULES, KEYWORD_RULES
+
 
 def classify_file(path: str, content: str) -> str:
     lower_path = path.lower()
@@ -19,7 +21,7 @@ def classify_file(path: str, content: str) -> str:
             return "SERVICE"
         if "utils" in lower_path or "helper" in lower_path:
             return "UTILS"
-        if "import " in content and "from " in content: 
+        if "import " in content and "from " in content:
             return "MODULE" # Generic Python Module
 
     # --- 2. Folder-based rules (Standard) ---

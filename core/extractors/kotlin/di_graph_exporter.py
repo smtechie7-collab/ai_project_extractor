@@ -1,6 +1,6 @@
 import os
 import re
-from collections import defaultdict
+
 from core.utils.file_reader import read_text_file
 from state.app_state import AppState
 
@@ -44,7 +44,7 @@ def export_kotlin_di_graph(tree_root):
             if MODULE_PATTERN.search(code):
                 install_match = INSTALL_IN_PATTERN.search(code)
                 component = install_match.group(1) if install_match else "UnspecifiedComponent"
-                
+
                 provides = PROVIDES_METHOD_PATTERN.findall(code)
                 binds = BINDS_METHOD_PATTERN.findall(code)
 

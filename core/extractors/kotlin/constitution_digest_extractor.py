@@ -1,6 +1,6 @@
-import re
 import os
-from collections import defaultdict
+import re
+
 from core.utils.file_reader import read_text_file
 from state.app_state import AppState
 
@@ -48,7 +48,7 @@ def extract_constitution_digest(tree_root):
         try:
             content = read_text_file(agents_md, max_size_kb=200)
             lines.append(f"## 1. ROOT CONSTITUTION: `{_get_rel_path(agents_md)}`")
-            
+
             # Extract Project Overview
             proj_match = re.search(r'## 🚀 PROJECT OVERVIEW([\s\S]*?)(?=##|\Z)', content)
             if proj_match:

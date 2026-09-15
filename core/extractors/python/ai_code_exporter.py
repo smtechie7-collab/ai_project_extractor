@@ -1,9 +1,9 @@
 import os
 from collections import defaultdict
-from core.utils.file_reader import read_text_file
-from core.extractors.python.code_exporter import classify
-from state.app_state import AppState
 
+from core.extractors.python.code_exporter import classify
+from core.utils.file_reader import read_text_file
+from state.app_state import AppState
 
 SKIP_DIR_NAMES = {
     "__pycache__",

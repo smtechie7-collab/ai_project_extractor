@@ -15,8 +15,8 @@ Scoring System:
 import os
 import re
 from collections import defaultdict
-from core.utils.file_reader import read_text_file
 
+from core.utils.file_reader import read_text_file
 
 # ─────────────────────────────────────────────
 # RELATED TERMS MAP

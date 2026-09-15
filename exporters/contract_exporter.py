@@ -1,6 +1,7 @@
 import os
-from core.contract_extractor import extract_ui_backend_contract
+
 from core.async_extractor import extract_async_context
+from core.contract_extractor import extract_ui_backend_contract
 
 
 def export_ui_backend_contracts(tree_root, project_root):
